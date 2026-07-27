@@ -1,0 +1,8 @@
+# EliteBud Robots File
+User-agent: *
+Allow: /
+Disallow: /checkout
+Disallow: /cart
+
+# Sitemap location
+Sitemap: https://elitebud.ca/sitemap.xml

@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-forest: #1D4D3A;
+    --color-emerald: #2D7A57;
+    --color-gold: #C8A65A;
+    --color-surface: #F8F8F7;
+    --color-charcoal: #202124;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #202124;
+    background-color: #FFFFFF;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Custom typography classes */
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.02em;
+  }
+}
+
+/* Liquid Glass System */
+@layer utilities {
+  /* Translucent Floating Navigation */
+  .glass-nav {
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border-bottom: 1px solid rgba(233, 236, 239, 0.8);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+  }
+
+  /* Glass Announcement Banner */
+  .glass-banner {
+    background: linear-gradient(135deg, rgba(29, 77, 58, 0.94) 0%, rgba(45, 122, 87, 0.92) 100%);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(200, 166, 90, 0.25);
+  }
+
+  /* Liquid Glass Cards */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(233, 236, 239, 0.9);
+    box-shadow: 0 10px 30px -10px rgba(29, 77, 58, 0.05);
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .glass-card:hover {
+    background: rgba(255, 255, 255, 0.98);
+    border-color: rgba(200, 166, 90, 0.4);
+    box-shadow: 0 20px 40px -15px rgba(29, 77, 58, 0.12);
+    transform: translateY(-3px);
+  }
+
+  /* Liquid Glass Badges */
+  .glass-badge {
+    background: rgba(29, 77, 58, 0.06);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(29, 77, 58, 0.12);
+    color: #1D4D3A;
+  }
+
+  .glass-badge-gold {
+    background: rgba(200, 166, 90, 0.12);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(200, 166, 90, 0.3);
+    color: #927329;
+  }
+
+  /* Liquid Glass Action Buttons */
+  .glass-button {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(29, 77, 58, 0.18);
+    color: #1D4D3A;
+    transition: all 0.25s ease;
+  }
+
+  .glass-button:hover {
+    background: rgba(29, 77, 58, 0.08);
+    border-color: rgba(29, 77, 58, 0.35);
+    color: #1D4D3A;
+  }
+
+  .glass-modal {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(233, 236, 239, 0.8);
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F8F8F7;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D0D5DD;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #1D4D3A;
+}

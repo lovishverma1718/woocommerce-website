@@ -1,0 +1,87 @@
+export const BRAND = {
+  name: 'EliteBud',
+  tagline: 'Best Bud In Town',
+  phone: '+1 (236) 883-6014',
+  phoneFormatted: '+1 (236) 883-6014',
+  phoneRaw: '12368836014',
+  email: 'safepayabby@gmail.com',
+  location: 'Abbotsford, British Columbia, Canada',
+  hours: '10:00 AM – 11:00 PM',
+  hoursOpen: 10,
+  hoursClose: 23,
+  deliveryWindow: '1–3 Hours',
+  freeDeliveryThreshold: 50, // CAD
+  standardDeliveryFee: 10,  // CAD
+  payments: [
+    { id: 'interac_etransfer', name: 'Interac E-Transfer', description: 'Instant auto-deposit payment to safepayabby@gmail.com' },
+    { id: 'cash_on_delivery', name: 'Cash On Delivery', description: 'Pay exact cash upon driver arrival at your door' },
+  ],
+  googleReviewOffer: {
+    reward: 'FREE 7g Weed',
+    headline: 'Love EliteBud? Leave a 5-Star Google Review.',
+    link: 'https://g.page/r/elitebud-abbotsford/review',
+  }
+};
+
+export const DELIVERY_ZONES = [
+  {
+    name: 'Abbotsford Central & East',
+    city: 'Abbotsford',
+    estimatedTime: '45 – 90 Mins',
+    minOrder: 35,
+    deliveryFee: 10,
+    freeDeliveryThreshold: 50,
+    available: true,
+    postalCodes: ['V2S', 'V2T', 'V3G', 'V4X'],
+  },
+  {
+    name: 'Abbotsford Airport (YXX) Area',
+    city: 'Abbotsford Airport',
+    estimatedTime: '60 – 90 Mins',
+    minOrder: 40,
+    deliveryFee: 10,
+    freeDeliveryThreshold: 50,
+    available: true,
+    postalCodes: ['V2T', 'V4X'],
+  },
+  {
+    name: 'Mission District',
+    city: 'Mission',
+    estimatedTime: '60 – 120 Mins',
+    minOrder: 45,
+    deliveryFee: 10,
+    freeDeliveryThreshold: 60,
+    available: true,
+    postalCodes: ['V2V', 'V4S'],
+  },
+  {
+    name: 'Chilliwack City & Sardis',
+    city: 'Chilliwack',
+    estimatedTime: '90 – 150 Mins',
+    minOrder: 50,
+    deliveryFee: 15,
+    freeDeliveryThreshold: 75,
+    available: true,
+    postalCodes: ['V2P', 'V2R'],
+  },
+  {
+    name: 'Aldergrove Community',
+    city: 'Aldergrove',
+    estimatedTime: '60 – 90 Mins',
+    minOrder: 40,
+    deliveryFee: 10,
+    freeDeliveryThreshold: 50,
+    available: true,
+    postalCodes: ['V4X'],
+  },
+  {
+    name: 'Langley Township & East',
+    city: 'Langley Township',
+    estimatedTime: '90 – 150 Mins',
+    minOrder: 60,
+    deliveryFee: 15,
+    freeDeliveryThreshold: 85,
+    available: true,
+    postalCodes: ['V2Y', 'V3A', 'V4W'],
+  },
+];

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ShieldCheck, Truck, CreditCard, Clock, ArrowRight, Sparkles } from 'lucide-react';
+import { ShieldCheck, Truck, CreditCard, Clock, ArrowRight, Sparkles, Mail } from 'lucide-react';
 import { GlassButton } from '../common/GlassButton';
 import { BRAND } from '../../lib/constants';
 
@@ -22,10 +22,19 @@ export const Hero: React.FC = () => {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="lg:col-span-7 space-y-8 text-left"
           >
-            {/* Top Pill */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-badge-gold text-xs font-semibold uppercase tracking-wider">
-              <Sparkles className="w-3.5 h-3.5 text-gold shrink-0" />
-              <span>Abbotsford's Premier Delivery Brand</span>
+            {/* Top Badges */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-badge-gold text-xs font-semibold uppercase tracking-wider">
+                <Sparkles className="w-3.5 h-3.5 text-gold shrink-0" />
+                <span>Abbotsford's Premier Delivery Brand</span>
+              </div>
+
+              {/* HIGHLIGHTED OFFICIAL E-TRANSFER EMAIL */}
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-forest text-gold border border-gold/40 text-xs font-bold shadow-md">
+                <Mail className="w-3.5 h-3.5 text-gold shrink-0 animate-pulse" />
+                <span>Official E-Transfer Email:</span>
+                <strong className="text-white font-mono underline decoration-gold underline-offset-2">{BRAND.email}</strong>
+              </div>
             </div>
 
             {/* Headline with Instrument Serif Emphasis */}

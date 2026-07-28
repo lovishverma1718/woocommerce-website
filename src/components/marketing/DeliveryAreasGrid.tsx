@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Clock, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { MapPin, CheckCircle2 } from 'lucide-react';
 import { DELIVERY_ZONES } from '../../lib/constants';
 import { GlassCard } from '../common/GlassCard';
 
@@ -32,43 +32,18 @@ export const DeliveryAreasGrid: React.FC = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.08 }}
             >
-              <GlassCard className="space-y-4 border border-border bg-surface/50 h-full flex flex-col justify-between">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-forest font-bold text-lg">
-                      <MapPin className="w-5 h-5 text-gold shrink-0" />
-                      <span>{zone.city}</span>
-                    </div>
-                    <span className="inline-flex items-center gap-1 text-[11px] bg-emerald/10 text-emerald px-2.5 py-1 rounded-full font-semibold">
-                      <CheckCircle2 className="w-3 h-3" />
-                      Active Zone
-                    </span>
-                  </div>
-
-                  <h4 className="text-sm font-semibold text-charcoal">{zone.name}</h4>
-
-                  <div className="space-y-2 text-xs text-charcoal-muted pt-2 border-t border-border/60">
-                    <div className="flex justify-between items-center">
-                      <span className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-gold" />
-                        Estimated Time:
-                      </span>
-                      <span className="font-bold text-forest">{zone.estimatedTime}</span>
-                    </div>
-
-                    <div className="flex justify-between items-center">
-                      <span className="flex items-center gap-1.5">
-                        <ShieldCheck className="w-3.5 h-3.5 text-gold" />
-                        Free Delivery Threshold:
-                      </span>
-                      <span className="font-bold text-charcoal">${zone.freeDeliveryThreshold} CAD</span>
-                    </div>
+              <GlassCard className="p-6 border border-border bg-surface/50 h-full flex items-center justify-between">
+                <div className="flex items-center gap-3 text-forest font-bold text-lg">
+                  <MapPin className="w-5 h-5 text-gold shrink-0" />
+                  <div>
+                    <span className="block text-base">{zone.city}</span>
+                    <span className="text-xs font-normal text-charcoal-muted block">{zone.name}</span>
                   </div>
                 </div>
-
-                <div className="pt-3 border-t border-border text-[11px] text-charcoal-muted font-mono">
-                  Postal Prefix: {zone.postalCodes.join(', ')}
-                </div>
+                <span className="inline-flex items-center gap-1 text-[11px] bg-emerald/10 text-emerald px-3 py-1 rounded-full font-semibold shrink-0">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Active Zone
+                </span>
               </GlassCard>
             </motion.div>
           ))}

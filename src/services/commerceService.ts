@@ -89,21 +89,25 @@ export class CommerceService {
   }
 
   /**
-   * Fetch all product categories
+   * Fetch all product categories (filters out 'uncategorized' and assigns custom images)
    */
   static async getCategories(): Promise<Category[]> {
     if (isLiveApiConfigured) {
       try {
         const response = await apiClient.get('/products/categories');
         if (Array.isArray(response.data) && response.data.length > 0) {
-          return response.data.map((c: any) => ({
-            id: String(c.id),
-            name: c.name,
-            slug: c.slug,
-            description: c.description ? c.description.replace(/<[^>]*>?/gm, '').trim() : '',
-            image: c.image?.src || MOCK_CATEGORIES[0].image,
-            count: c.count || 0,
-          }));
+          const filtered = response.data.filter((c: any) => c.slug !== 'uncategorized' && c.name.toLowerCase() !== 'uncategorized');
+          return filtered.map((c: any) => {
+            const matchMock = MOCK_CATEGORIES.find(m => m.slug === c.slug || c.slug.includes(m.slug) || c.name.toLowerCase().includes(m.slug));
+            return {
+              id: String(c.id),
+              name: c.name,
+              slug: c.slug,
+              description: c.description ? c.description.replace(/<[^>]*>?/gm, '').trim() : '',
+              image: matchMock ? matchMock.image : (c.image?.src || MOCK_CATEGORIES[0].image),
+              count: c.count || 0,
+            };
+          });
         }
       } catch (err) {
         console.warn('Fallback to local categories:', err);

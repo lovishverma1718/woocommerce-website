@@ -1026,49 +1026,17 @@ export const Checkout: React.FC = () => {
             </div>
           </GlassCard>
 
-          {/* Step 3: Delivery Time Window & Payment Method */}
+          {/* Step 3: Payment Method */}
           <GlassCard className="p-6 sm:p-8 space-y-6 bg-white border border-border">
             <div className="flex items-center gap-3 pb-4 border-b border-border">
               <div className="w-8 h-8 rounded-full bg-forest text-gold flex items-center justify-center text-xs font-bold">
                 3
               </div>
-              <h2 className="text-xl font-bold text-forest">Dispatch Time & Payment Method</h2>
-            </div>
-
-            {/* Delivery Time Options */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-forest block">
-                Fulfillment Window:
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <label className="p-3 rounded-xl border border-border flex items-center gap-2 cursor-pointer hover:border-forest">
-                  <input {...register('deliveryTimeSlot')} type="radio" value="asap" className="accent-forest" />
-                  <div className="text-xs">
-                    <span className="font-bold text-forest block">ASAP (1–3 Hours)</span>
-                    <span className="text-charcoal-muted">Immediate dispatch</span>
-                  </div>
-                </label>
-
-                <label className="p-3 rounded-xl border border-border flex items-center gap-2 cursor-pointer hover:border-forest">
-                  <input {...register('deliveryTimeSlot')} type="radio" value="scheduled_afternoon" className="accent-forest" />
-                  <div className="text-xs">
-                    <span className="font-bold text-charcoal block">Afternoon Delivery</span>
-                    <span className="text-charcoal-muted">2:00 PM – 5:00 PM</span>
-                  </div>
-                </label>
-
-                <label className="p-3 rounded-xl border border-border flex items-center gap-2 cursor-pointer hover:border-forest">
-                  <input {...register('deliveryTimeSlot')} type="radio" value="scheduled_evening" className="accent-forest" />
-                  <div className="text-xs">
-                    <span className="font-bold text-charcoal block">Evening Delivery</span>
-                    <span className="text-charcoal-muted">6:00 PM – 9:00 PM</span>
-                  </div>
-                </label>
-              </div>
+              <h2 className="text-xl font-bold text-forest">Payment Method</h2>
             </div>
 
             {/* Payment Method Selector (Enforces Business Logic Rule) */}
-            <div className="space-y-3 pt-4 border-t border-border">
+            <div className="space-y-3">
               <label className="text-xs font-bold uppercase tracking-wider text-forest block">
                 Payment Method:
               </label>

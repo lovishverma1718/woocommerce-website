@@ -6,16 +6,16 @@ import { ProductCard } from '../components/ecommerce/ProductCard';
 import { GoogleReviewPromo } from '../components/marketing/GoogleReviewPromo';
 import { DeliveryAreasGrid } from '../components/marketing/DeliveryAreasGrid';
 import { FAQPreview } from '../components/marketing/FAQPreview';
+import { Testimonials } from '../components/marketing/Testimonials';
 import { useCategories, useProducts } from '../hooks/useProducts';
 import { GlassButton } from '../components/common/GlassButton';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles, Phone, ShieldCheck } from 'lucide-react';
 import { BRAND } from '../lib/constants';
-import { GlassCard } from '../components/common/GlassCard';
 
 export const Home: React.FC = () => {
   const { data: categories = [] } = useCategories();
-  const { data: products = [], isLoading: isProductsLoading } = useProducts({ featuredOnly: true } as any);
+  const { data: products = [] } = useProducts({ featuredOnly: true } as any);
 
   return (
     <div className="space-y-12">
@@ -126,16 +126,19 @@ export const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* 6. Google Review Promotion Banner */}
+      {/* 6. Customer Testimonials */}
+      <Testimonials />
+
+      {/* 7. Google Review Promotion Banner */}
       <GoogleReviewPromo />
 
-      {/* 7. Delivery Areas */}
+      {/* 8. Delivery Areas */}
       <DeliveryAreasGrid />
 
-      {/* 8. FAQ Preview */}
+      {/* 9. FAQ Preview */}
       <FAQPreview />
 
-      {/* 9. Contact Banner CTA */}
+      {/* 10. Contact Banner CTA */}
       <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="rounded-2xl bg-forest text-white p-8 sm:p-12 text-center space-y-6 shadow-floating relative overflow-hidden">
           <div className="space-y-2 max-w-2xl mx-auto">

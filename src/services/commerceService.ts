@@ -89,15 +89,27 @@ export class CommerceService {
   }
 
   /**
-   * Fetch all product categories (filters out 'uncategorized' and assigns custom images)
+   * Fetch all product categories (filters out 'uncategorized', assigns custom images, and strictly sorts in 2x3 matrix order)
    */
   static async getCategories(): Promise<Category[]> {
+    const getOrderIndex = (slug: string, name: string): number => {
+      const s = slug.toLowerCase();
+      const n = name.toLowerCase();
+      if (s.includes('flower') || n.includes('flower')) return 0;
+      if (s.includes('thc') || s.includes('pen') || s.includes('vape') || n.includes('thc') || n.includes('pen') || n.includes('vape')) return 1;
+      if (s.includes('edible') || s.includes('gummi') || n.includes('edible') || n.includes('gummi')) return 2;
+      if (s.includes('concentrate') || s.includes('rosin') || n.includes('concentrate') || n.includes('rosin')) return 3;
+      if (s.includes('roll') || s.includes('pre') || n.includes('roll') || n.includes('pre')) return 4;
+      if (s.includes('mushroom') || s.includes('micro') || n.includes('mushroom') || n.includes('micro')) return 5;
+      return 99;
+    };
+
     if (isLiveApiConfigured) {
       try {
         const response = await apiClient.get('/products/categories');
         if (Array.isArray(response.data) && response.data.length > 0) {
           const filtered = response.data.filter((c: any) => c.slug !== 'uncategorized' && c.name.toLowerCase() !== 'uncategorized');
-          return filtered.map((c: any) => {
+          const mapped: Category[] = filtered.map((c: any) => {
             const matchMock = MOCK_CATEGORIES.find(m => m.slug === c.slug || c.slug.includes(m.slug) || c.name.toLowerCase().includes(m.slug));
             return {
               id: String(c.id),
@@ -108,12 +120,19 @@ export class CommerceService {
               count: c.count || 0,
             };
           });
+
+          // Sort according to strict client 2x3 matrix order
+          mapped.sort((a, b) => getOrderIndex(a.slug, a.name) - getOrderIndex(b.slug, b.name));
+          return mapped;
         }
       } catch (err) {
         console.warn('Fallback to local categories:', err);
       }
     }
-    return MOCK_CATEGORIES;
+
+    const localList = [...MOCK_CATEGORIES];
+    localList.sort((a, b) => getOrderIndex(a.slug, a.name) - getOrderIndex(b.slug, b.name));
+    return localList;
   }
 
   /**

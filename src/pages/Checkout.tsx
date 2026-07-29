@@ -89,9 +89,8 @@ export const Checkout: React.FC = () => {
   const deliveryFee = calculateDeliveryFee(subtotal);
   const total = subtotal + deliveryFee;
 
-  // IMPORTANT BUSINESS RULE:
-  // Cart Total >= $50 -> HIDE Cash On Delivery, ONLY show Interac E-Transfer
-  const isCodAllowed = total < 50;
+  // Cash On Delivery is available for all order totals
+  const isCodAllowed = true;
 
   const {
     register,
@@ -1041,14 +1040,7 @@ export const Checkout: React.FC = () => {
                 Payment Method:
               </label>
 
-              {!isCodAllowed && (
-                <div className="p-3 rounded-xl bg-forest/5 border border-forest/10 text-xs text-forest flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-gold shrink-0" />
-                  <span>Orders of $50 CAD or higher qualify for FREE shipping and require Interac E-Transfer payment.</span>
-                </div>
-              )}
-
-              <div className={`grid grid-cols-1 ${isCodAllowed ? 'sm:grid-cols-2' : ''} gap-4`}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <label className={`p-4 rounded-xl border text-left cursor-pointer transition-all ${
                   watchPayment === 'interac_etransfer'
                     ? 'border-forest bg-forest/5 shadow-xs'
@@ -1063,22 +1055,19 @@ export const Checkout: React.FC = () => {
                   </p>
                 </label>
 
-                {/* HIDE COD IF TOTAL >= $50 */}
-                {isCodAllowed && (
-                  <label className={`p-4 rounded-xl border text-left cursor-pointer transition-all ${
-                    watchPayment === 'cash_on_delivery'
-                      ? 'border-forest bg-forest/5 shadow-xs'
-                      : 'border-border bg-surface'
-                  }`}>
-                    <div className="flex items-center gap-2 font-bold text-forest text-sm mb-1">
-                      <input {...register('paymentMethod')} type="radio" value="cash_on_delivery" className="accent-forest" />
-                      <span>Cash On Delivery</span>
-                    </div>
-                    <p className="text-xs text-charcoal-muted leading-relaxed">
-                      Pay exact cash amount directly to your driver upon arrival at your doorstep (Only available for orders under $50).
-                    </p>
-                  </label>
-                )}
+                <label className={`p-4 rounded-xl border text-left cursor-pointer transition-all ${
+                  watchPayment === 'cash_on_delivery'
+                    ? 'border-forest bg-forest/5 shadow-xs'
+                    : 'border-border bg-surface'
+                }`}>
+                  <div className="flex items-center gap-2 font-bold text-forest text-sm mb-1">
+                    <input {...register('paymentMethod')} type="radio" value="cash_on_delivery" className="accent-forest" />
+                    <span>Cash On Delivery</span>
+                  </div>
+                  <p className="text-xs text-charcoal-muted leading-relaxed">
+                    Pay exact cash amount directly to your driver upon arrival at your doorstep.
+                  </p>
+                </label>
               </div>
             </div>
 

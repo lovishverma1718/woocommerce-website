@@ -4,21 +4,92 @@ import { apiClient, isLiveApiConfigured } from '../api/client';
 
 export class CommerceService {
   /**
-   * Fetch all products from WooCommerce REST API
+   * Helper to flexibly match a category slug/name against a filter string
+   */
+  private static matchCategory(prodCatName: string, prodCatSlug: string, filterTarget: string): boolean {
+    const target = filterTarget.toLowerCase().trim();
+    const cName = prodCatName.toLowerCase().trim();
+    const cSlug = prodCatSlug.toLowerCase().trim();
+
+    if (target === 'all') return true;
+    if (cSlug === target || cName === target) return true;
+
+    if (target.includes('flower') && (cSlug.includes('flower') || cName.includes('flower'))) return true;
+    if ((target.includes('thc') || target.includes('pen') || target.includes('vape')) && 
+        (cSlug.includes('thc') || cSlug.includes('pen') || cSlug.includes('vape') || cName.includes('thc') || cName.includes('pen') || cName.includes('vape'))) return true;
+    if ((target.includes('edible') || target.includes('gummi')) && 
+        (cSlug.includes('edible') || cSlug.includes('gummi') || cName.includes('edible') || cName.includes('gummi'))) return true;
+    if ((target.includes('concentrate') || target.includes('rosin')) && 
+        (cSlug.includes('concentrate') || cSlug.includes('rosin') || cName.includes('concentrate') || cName.includes('rosin'))) return true;
+    if ((target.includes('roll') || target.includes('pre')) && 
+        (cSlug.includes('roll') || cSlug.includes('pre') || cName.includes('roll') || cName.includes('pre'))) return true;
+    if ((target.includes('mushroom') || target.includes('micro')) && 
+        (cSlug.includes('mushroom') || cSlug.includes('micro') || cName.includes('mushroom') || cName.includes('micro'))) return true;
+
+    return cSlug.includes(target) || target.includes(cSlug);
+  }
+
+  /**
+   * Fetch all products from WooCommerce REST API (100% Live DB products, zero mock fallback)
    */
   static async getProducts(filters?: Partial<FilterState>): Promise<Product[]> {
     if (isLiveApiConfigured) {
       try {
+        // Fetch all published products from WooCommerce without passing unmapped string category params
         const response = await apiClient.get('/products', {
           params: {
-            per_page: 50,
-            search: filters?.searchQuery || undefined,
-            category: filters?.category !== 'all' ? filters?.category : undefined,
+            per_page: 100,
           }
         });
 
-        if (Array.isArray(response.data) && response.data.length > 0) {
-          const liveProducts = response.data.map(CommerceService.mapWCProductToDomain);
+        if (Array.isArray(response.data)) {
+          let liveProducts = response.data.map(CommerceService.mapWCProductToDomain);
+
+          // Apply client-side search query
+          if (filters?.searchQuery) {
+            const q = filters.searchQuery.toLowerCase();
+            liveProducts = liveProducts.filter(
+              p => p.name.toLowerCase().includes(q) || 
+                   p.category.toLowerCase().includes(q) ||
+                   p.shortDescription.toLowerCase().includes(q) ||
+                   p.effects.some(e => e.toLowerCase().includes(q))
+            );
+          }
+
+          // Apply client-side category filter with flexible slug matching
+          if (filters?.category && filters.category !== 'all') {
+            liveProducts = liveProducts.filter(p => 
+              CommerceService.matchCategory(p.category, p.categorySlug, filters.category!)
+            );
+          }
+
+          // Apply strain profile filter
+          if (filters?.strainType && filters.strainType !== 'all') {
+            liveProducts = liveProducts.filter(p => p.strainType.toLowerCase() === filters.strainType!.toLowerCase());
+          }
+
+          // Apply stock filter
+          if (filters?.inStockOnly) {
+            liveProducts = liveProducts.filter(p => p.inStock);
+          }
+
+          // Apply price range filter
+          if (filters?.minPrice !== undefined && filters?.maxPrice !== undefined) {
+            liveProducts = liveProducts.filter(p => p.price >= (filters.minPrice ?? 0) && p.price <= (filters.maxPrice ?? 1000));
+          }
+
+          // Sorting
+          if (filters?.sortBy === 'price-low') {
+            liveProducts.sort((a, b) => a.price - b.price);
+          } else if (filters?.sortBy === 'price-high') {
+            liveProducts.sort((a, b) => b.price - a.price);
+          } else if (filters?.sortBy === 'rating') {
+            liveProducts.sort((a, b) => b.rating - a.rating);
+          } else if (filters?.sortBy === 'newest') {
+            liveProducts.sort((a, b) => b.id.localeCompare(a.id));
+          }
+
+          // ALWAYS return live products (never leak mock products into production)
           return liveProducts;
         }
       } catch (err: any) {
@@ -26,70 +97,32 @@ export class CommerceService {
       }
     }
 
-    // Local filter simulation fallback
-    let result = [...MOCK_PRODUCTS];
-
-    if (filters?.searchQuery) {
-      const q = filters.searchQuery.toLowerCase();
-      result = result.filter(
-        p => p.name.toLowerCase().includes(q) || 
-             p.category.toLowerCase().includes(q) ||
-             p.shortDescription.toLowerCase().includes(q) ||
-             p.effects.some(e => e.toLowerCase().includes(q))
-      );
-    }
-
-    if (filters?.category && filters.category !== 'all') {
-      result = result.filter(p => p.categorySlug === filters.category);
-    }
-
-    if (filters?.strainType && filters.strainType !== 'all') {
-      result = result.filter(p => p.strainType === filters.strainType);
-    }
-
-    if (filters?.inStockOnly) {
-      result = result.filter(p => p.inStock);
-    }
-
-    if (filters?.minPrice !== undefined && filters?.maxPrice !== undefined) {
-      result = result.filter(p => p.price >= (filters.minPrice ?? 0) && p.price <= (filters.maxPrice ?? 1000));
-    }
-
-    // Sorting
-    if (filters?.sortBy === 'price-low') {
-      result.sort((a, b) => a.price - b.price);
-    } else if (filters?.sortBy === 'price-high') {
-      result.sort((a, b) => b.price - a.price);
-    } else if (filters?.sortBy === 'rating') {
-      result.sort((a, b) => b.rating - a.rating);
-    } else if (filters?.sortBy === 'newest') {
-      result.sort((a, b) => b.id.localeCompare(a.id));
-    }
-
-    return result;
+    // Fallback ONLY used if API configuration is missing completely
+    return [];
   }
 
   /**
-   * Fetch single product by slug or ID
+   * Fetch single product by slug or ID from Live WooCommerce API
    */
   static async getProductBySlug(slug: string): Promise<Product | null> {
     if (isLiveApiConfigured) {
       try {
-        const response = await apiClient.get('/products', { params: { slug } });
-        if (response.data && response.data.length > 0) {
-          return CommerceService.mapWCProductToDomain(response.data[0]);
+        const response = await apiClient.get('/products', { params: { per_page: 100 } });
+        if (Array.isArray(response.data)) {
+          const liveProducts = response.data.map(CommerceService.mapWCProductToDomain);
+          const found = liveProducts.find(p => p.slug === slug || p.id === slug);
+          if (found) return found;
         }
       } catch (err) {
         console.warn('Fallback lookup for slug:', slug);
       }
     }
 
-    const found = MOCK_PRODUCTS.find(p => p.slug === slug || p.id === slug);
-    return found || null;
+    return null;
   }
 
   /**
-   * Fetch all product categories (filters out 'uncategorized', assigns custom images, and strictly sorts in 2x3 matrix order)
+   * Fetch all product categories (dynamically computes exact product counts from live products)
    */
   static async getCategories(): Promise<Category[]> {
     const getOrderIndex = (slug: string, name: string): number => {
@@ -106,18 +139,28 @@ export class CommerceService {
 
     if (isLiveApiConfigured) {
       try {
+        // Get all live products to calculate accurate category counts
+        const allLiveProducts = await CommerceService.getProducts();
+
         const response = await apiClient.get('/products/categories');
         if (Array.isArray(response.data) && response.data.length > 0) {
           const filtered = response.data.filter((c: any) => c.slug !== 'uncategorized' && c.name.toLowerCase() !== 'uncategorized');
           const mapped: Category[] = filtered.map((c: any) => {
             const matchMock = MOCK_CATEGORIES.find(m => m.slug === c.slug || c.slug.includes(m.slug) || c.name.toLowerCase().includes(m.slug));
+            
+            // Calculate accurate count based on actual live products in database
+            const liveCount = allLiveProducts.filter(p => 
+              CommerceService.matchCategory(p.category, p.categorySlug, c.slug) ||
+              CommerceService.matchCategory(p.category, p.categorySlug, c.name)
+            ).length;
+
             return {
               id: String(c.id),
               name: c.name,
               slug: c.slug,
               description: c.description ? c.description.replace(/<[^>]*>?/gm, '').trim() : '',
               image: matchMock ? matchMock.image : (c.image?.src || MOCK_CATEGORIES[0].image),
-              count: c.count || 0,
+              count: liveCount,
             };
           });
 
@@ -215,7 +258,7 @@ export class CommerceService {
     return true;
   }
 
-  // Private helper to map WooCommerce API product payload to domain model
+  // Helper to map WooCommerce API product payload to domain model
   private static mapWCProductToDomain(wc: any): Product {
     const defaultCraftImg = 'https://images.unsplash.com/photo-1603909223429-69bb7101f420?auto=format&fit=crop&w=1000&q=80';
     const images = (wc.images && wc.images.length > 0 && wc.images[0].src)
@@ -227,13 +270,16 @@ export class CommerceService {
     const salePriceVal = wc.sale_price ? parseFloat(wc.sale_price) : undefined;
     const finalPrice = priceVal > 0 ? priceVal : 45.00;
 
+    const catName = wc.categories?.[0]?.name || 'Craft Flower';
+    const catSlug = wc.categories?.[0]?.slug || 'flower';
+
     return {
       id: String(wc.id),
       slug: wc.slug || `product-${wc.id}`,
       name: wc.name,
       tagline: wc.short_description ? wc.short_description.replace(/<[^>]*>?/gm, '').trim() : 'Private Reserve Small Batch Craft Flower',
-      category: wc.categories?.[0]?.name || 'Craft Flower',
-      categorySlug: wc.categories?.[0]?.slug || 'flower',
+      category: catName,
+      categorySlug: catSlug,
       price: finalPrice,
       regularPrice: regPriceVal > 0 ? regPriceVal : finalPrice,
       salePrice: salePriceVal,

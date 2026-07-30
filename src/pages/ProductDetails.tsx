@@ -274,32 +274,38 @@ export const ProductDetails: React.FC = () => {
               </div>
             </div>
 
-            {/* Weight Option Selector */}
-            {product.weightOptions && product.weightOptions.length > 0 && (
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-forest block">
-                  Select Weight / Size Option:
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {product.weightOptions.map((opt) => (
-                    <button
-                      key={opt.label}
-                      onClick={() => setSelectedWeight(opt.label)}
-                      className={`p-3 text-xs rounded-xl border text-center font-medium transition-all cursor-pointer ${
-                        activeWeightLabel === opt.label
-                          ? 'bg-forest text-white border-forest shadow-md font-bold scale-[1.02]'
-                          : 'bg-surface text-charcoal border-border hover:border-forest/40'
-                      }`}
-                    >
-                      <span className="block text-sm">{opt.label}</span>
-                      <span className="block text-[11px] opacity-80 mt-0.5">
-                        {formatCurrency(opt.salePrice || opt.price)}
-                      </span>
-                    </button>
-                  ))}
+            {/* Weight Option Selector (Only shown for Flower, Concentrates, and Mushrooms) */}
+            {(() => {
+              const cat = (product.categorySlug || product.category || '').toLowerCase();
+              const showWeight = cat.includes('flower') || cat.includes('concentrate') || cat.includes('rosin') || cat.includes('mushroom') || cat.includes('micro');
+              if (!showWeight || !product.weightOptions || product.weightOptions.length <= 1) return null;
+
+              return (
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-forest block">
+                    Select Weight / Quantity Option:
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {product.weightOptions.map((opt) => (
+                      <button
+                        key={opt.label}
+                        onClick={() => setSelectedWeight(opt.label)}
+                        className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
+                          selectedWeight === opt.label
+                            ? 'border-forest bg-forest/5 ring-2 ring-forest/20 font-bold'
+                            : 'border-border bg-white hover:border-forest/40'
+                        }`}
+                      >
+                        <span className="block text-xs font-bold text-charcoal">{opt.label}</span>
+                        <span className="block text-[11px] text-forest mt-0.5 font-semibold">
+                          {formatCurrency(opt.salePrice || opt.price)}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Purchase Action Box */}
             <div className="p-6 rounded-2xl glass-card border border-border space-y-6 bg-white shadow-luxury">

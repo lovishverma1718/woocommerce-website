@@ -133,27 +133,33 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </p>
         </div>
 
-        {/* Weight Option Selector */}
-        {product.weightOptions && product.weightOptions.length > 1 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto py-1 no-scrollbar">
-            {product.weightOptions.map((opt) => (
-              <button
-                key={opt.label}
-                onClick={(e) => {
-                  e.preventDefault();
-                  setSelectedWeight(opt.label);
-                }}
-                className={`px-2.5 py-1 text-[11px] rounded-lg border font-medium transition-all cursor-pointer ${
-                  selectedWeight === opt.label
-                    ? 'bg-forest text-white border-forest shadow-xs font-bold'
-                    : 'bg-surface text-charcoal-muted border-border hover:border-forest/40'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        )}
+        {/* Weight Option Selector (Only shown for Flower, Concentrates, and Mushrooms) */}
+        {(() => {
+          const cat = (product.categorySlug || product.category || '').toLowerCase();
+          const showWeight = cat.includes('flower') || cat.includes('concentrate') || cat.includes('rosin') || cat.includes('mushroom') || cat.includes('micro');
+          if (!showWeight || !product.weightOptions || product.weightOptions.length <= 1) return null;
+
+          return (
+            <div className="flex items-center gap-1.5 overflow-x-auto py-1 no-scrollbar">
+              {product.weightOptions.map((opt) => (
+                <button
+                  key={opt.label}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setSelectedWeight(opt.label);
+                  }}
+                  className={`px-2.5 py-1 text-[11px] rounded-lg border font-medium transition-all cursor-pointer ${
+                    selectedWeight === opt.label
+                      ? 'bg-forest text-white border-forest shadow-xs font-bold'
+                      : 'bg-surface text-charcoal-muted border-border hover:border-forest/40'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          );
+        })()}
 
         {/* Bottom Price & Add to Cart Action */}
         <div className="pt-3 border-t border-border flex items-center justify-between gap-3">

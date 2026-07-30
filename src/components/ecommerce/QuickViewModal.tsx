@@ -68,27 +68,33 @@ export const QuickViewModal: React.FC = () => {
               {quickViewProduct.shortDescription}
             </p>
 
-            {/* Weight selector */}
-            {quickViewProduct.weightOptions && quickViewProduct.weightOptions.length > 0 && (
-              <div className="space-y-1.5 pt-2">
-                <span className="text-xs font-semibold text-charcoal block">Select Weight / Quantity:</span>
-                <div className="flex flex-wrap gap-2">
-                  {quickViewProduct.weightOptions.map((opt) => (
-                    <button
-                      key={opt.label}
-                      onClick={() => setSelectedWeight(opt.label)}
-                      className={`px-3 py-1.5 text-xs rounded-lg border font-medium transition-all ${
-                        activeWeight === opt.label
-                          ? 'bg-forest text-white border-forest shadow-xs'
-                          : 'bg-surface text-charcoal-muted border-border hover:border-forest/40'
-                      }`}
-                    >
-                      {opt.label} ({formatCurrency(opt.salePrice || opt.price)})
-                    </button>
-                  ))}
+            {/* Weight selector (Only shown for Flower, Concentrates, and Mushrooms) */}
+            {(() => {
+              const cat = (quickViewProduct.categorySlug || quickViewProduct.category || '').toLowerCase();
+              const showWeight = cat.includes('flower') || cat.includes('concentrate') || cat.includes('rosin') || cat.includes('mushroom') || cat.includes('micro');
+              if (!showWeight || !quickViewProduct.weightOptions || quickViewProduct.weightOptions.length <= 1) return null;
+
+              return (
+                <div className="space-y-1.5 pt-2">
+                  <span className="text-xs font-semibold text-charcoal block">Select Weight / Quantity:</span>
+                  <div className="flex flex-wrap gap-2">
+                    {quickViewProduct.weightOptions.map((opt) => (
+                      <button
+                        key={opt.label}
+                        onClick={() => setSelectedWeight(opt.label)}
+                        className={`px-3 py-1.5 text-xs rounded-lg border font-medium transition-all ${
+                          activeWeight === opt.label
+                            ? 'bg-forest text-white border-forest shadow-xs'
+                            : 'bg-surface text-charcoal-muted border-border hover:border-forest/40'
+                        }`}
+                      >
+                        {opt.label} ({formatCurrency(opt.salePrice || opt.price)})
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
 
           <div className="space-y-4 pt-4 border-t border-border">

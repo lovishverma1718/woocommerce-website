@@ -58,11 +58,7 @@ export const QuickViewModal: React.FC = () => {
               {quickViewProduct.name}
             </h2>
 
-            <div className="flex items-center gap-2">
-              <GlassBadge variant="strain">
-                {quickViewProduct.strainType}
-              </GlassBadge>
-            </div>
+
 
             <p className="text-xs sm:text-sm text-charcoal-muted leading-relaxed">
               {quickViewProduct.shortDescription}

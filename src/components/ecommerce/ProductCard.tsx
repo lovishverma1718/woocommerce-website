@@ -77,12 +77,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           )}
         </div>
 
-        {/* Strain Profile pill */}
-        <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
-          <GlassBadge variant="strain">
-            {product.strainType}
-          </GlassBadge>
-        </div>
+
 
         {/* Wishlist Heart Button */}
         <button

@@ -92,27 +92,7 @@ export const FilterBar: React.FC = () => {
         </div>
       </div>
 
-      {/* Strain Type Filter */}
-      <div className="space-y-2 pt-2 border-t border-border">
-        <label className="text-xs font-bold uppercase tracking-wider text-forest block">
-          Strain Profile
-        </label>
-        <div className="flex flex-wrap gap-1.5">
-          {strainOptions.map((st) => (
-            <button
-              key={st}
-              onClick={() => setStrainType(st)}
-              className={`px-3 py-1.5 text-xs rounded-lg border font-medium transition-all ${
-                strainType === st
-                  ? 'bg-forest text-white border-forest shadow-xs'
-                  : 'bg-surface text-charcoal-muted border-border hover:border-forest/40'
-              }`}
-            >
-              {st === 'all' ? 'All Strains' : st}
-            </button>
-          ))}
-        </div>
-      </div>
+
 
       {/* Max Price Slider */}
       <div className="space-y-2 pt-2 border-t border-border">

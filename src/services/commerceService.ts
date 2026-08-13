@@ -1,4 +1,4 @@
-import { Product, Category, FAQItem, CheckoutPayload, Order, FilterState } from '../types';
+import { Product, Category, FAQItem, CheckoutPayload, Order, FilterState, StrainType } from '../types';
 import { MOCK_PRODUCTS, MOCK_CATEGORIES, MOCK_FAQS } from '../api/mockData';
 import { apiClient, isLiveApiConfigured } from '../api/client';
 
@@ -63,9 +63,20 @@ export class CommerceService {
             );
           }
 
-          // Apply strain profile filter
+          // Apply strain profile filter with smart title & strain matching
           if (filters?.strainType && filters.strainType !== 'all') {
-            liveProducts = liveProducts.filter(p => p.strainType.toLowerCase() === filters.strainType!.toLowerCase());
+            const targetStrain = filters.strainType.toLowerCase();
+            liveProducts = liveProducts.filter(p => {
+              const sType = p.strainType.toLowerCase();
+              const pName = p.name.toLowerCase();
+              const pDesc = p.shortDescription.toLowerCase();
+
+              if (targetStrain === 'sativa') return sType === 'sativa' || pName.includes('sativa') || pDesc.includes('sativa');
+              if (targetStrain === 'indica') return sType === 'indica' || pName.includes('indica') || pDesc.includes('indica');
+              if (targetStrain === 'hybrid') return sType === 'hybrid' || pName.includes('hybrid') || pDesc.includes('hybrid');
+              if (targetStrain.includes('cbd')) return sType.includes('cbd') || pName.includes('cbd') || pDesc.includes('cbd');
+              return sType === targetStrain;
+            });
           }
 
           // Apply stock filter
@@ -273,6 +284,27 @@ export class CommerceService {
     const catName = wc.categories?.[0]?.name || 'Craft Flower';
     const catSlug = wc.categories?.[0]?.slug || 'flower';
 
+    // Smart strain detection from meta_data, product title, or product description
+    const rawStrain = String(wc.meta_data?.find((m: any) => m.key === 'strain_type' || m.key === 'strain')?.value || '');
+    const nameAndDesc = `${wc.name || ''} ${wc.short_description || ''} ${wc.description || ''}`.toLowerCase();
+    
+    let strainType: StrainType = 'Hybrid';
+    if (rawStrain && ['indica', 'sativa', 'hybrid', 'high cbd'].includes(rawStrain.toLowerCase())) {
+      const lower = rawStrain.toLowerCase();
+      if (lower === 'sativa') strainType = 'Sativa';
+      else if (lower === 'indica') strainType = 'Indica';
+      else if (lower.includes('cbd')) strainType = 'High CBD';
+      else strainType = 'Hybrid';
+    } else if (nameAndDesc.includes('sativa')) {
+      strainType = 'Sativa';
+    } else if (nameAndDesc.includes('indica')) {
+      strainType = 'Indica';
+    } else if (nameAndDesc.includes('cbd')) {
+      strainType = 'High CBD';
+    } else {
+      strainType = 'Hybrid';
+    }
+
     return {
       id: String(wc.id),
       slug: wc.slug || `product-${wc.id}`,
@@ -287,7 +319,7 @@ export class CommerceService {
       featured: Boolean(wc.featured || true),
       inStock: wc.stock_status === 'instock',
       stockQuantity: wc.stock_quantity || 30,
-      strainType: (wc.meta_data?.find((m: any) => m.key === 'strain_type')?.value) || 'Indica',
+      strainType: strainType,
       thcPercentage: parseFloat(wc.meta_data?.find((m: any) => m.key === 'thc_percentage')?.value || '32.0'),
       cbdPercentage: parseFloat(wc.meta_data?.find((m: any) => m.key === 'cbd_percentage')?.value || '0.1'),
       effects: ['Deep Relaxation', 'Euphoric', 'Nighttime Calm'],

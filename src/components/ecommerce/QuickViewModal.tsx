@@ -60,7 +60,7 @@ export const QuickViewModal: React.FC = () => {
 
             <div className="flex items-center gap-2">
               <GlassBadge variant="strain">
-                {quickViewProduct.strainType} • {quickViewProduct.thcPercentage}% THC
+                {quickViewProduct.strainType}
               </GlassBadge>
             </div>
 

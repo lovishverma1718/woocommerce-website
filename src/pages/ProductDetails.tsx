@@ -233,7 +233,7 @@ export const ProductDetails: React.FC = () => {
 
               <div className="flex flex-wrap items-center gap-2 pt-1">
                 <GlassBadge variant="strain">
-                  {product.strainType} • {product.thcPercentage}% THC
+                  {product.strainType}
                 </GlassBadge>
                 {product.cbdPercentage > 0 && (
                   <GlassBadge variant="emerald">{product.cbdPercentage}% CBD</GlassBadge>

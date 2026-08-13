@@ -77,10 +77,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           )}
         </div>
 
-        {/* Strain & THC pill */}
+        {/* Strain Profile pill */}
         <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
           <GlassBadge variant="strain">
-            {product.strainType} • {product.thcPercentage}% THC
+            {product.strainType}
           </GlassBadge>
         </div>
 

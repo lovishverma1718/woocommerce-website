@@ -1,4 +1,4 @@
-import { Product, Category, FAQItem, CheckoutPayload, Order, FilterState, StrainType } from '../types';
+import { Product, Category, FAQItem, CheckoutPayload, Order, FilterState, StrainType, WeightOption } from '../types';
 import { MOCK_PRODUCTS, MOCK_CATEGORIES, MOCK_FAQS } from '../api/mockData';
 import { apiClient, isLiveApiConfigured } from '../api/client';
 
@@ -43,7 +43,20 @@ export class CommerceService {
         });
 
         if (Array.isArray(response.data)) {
-          let liveProducts = response.data.map(CommerceService.mapWCProductToDomain);
+          let liveProducts = await Promise.all(
+            response.data.map(async (wc: any) => {
+              const domainProduct = CommerceService.mapWCProductToDomain(wc);
+              if (wc.type === 'variable' || (Array.isArray(wc.variations) && wc.variations.length > 0)) {
+                const liveVariations = await CommerceService.fetchProductVariations(wc.id);
+                if (liveVariations.length > 0) {
+                  domainProduct.weightOptions = liveVariations;
+                  domainProduct.price = liveVariations[0].salePrice || liveVariations[0].price;
+                  domainProduct.defaultWeight = liveVariations[0].label;
+                }
+              }
+              return domainProduct;
+            })
+          );
 
           // Apply client-side search query
           if (filters?.searchQuery) {
@@ -120,9 +133,19 @@ export class CommerceService {
       try {
         const response = await apiClient.get('/products', { params: { per_page: 100 } });
         if (Array.isArray(response.data)) {
-          const liveProducts = response.data.map(CommerceService.mapWCProductToDomain);
-          const found = liveProducts.find(p => p.slug === slug || p.id === slug);
-          if (found) return found;
+          const rawFound = response.data.find((wc: any) => wc.slug === slug || String(wc.id) === slug);
+          if (rawFound) {
+            const domainProduct = CommerceService.mapWCProductToDomain(rawFound);
+            if (rawFound.type === 'variable' || (Array.isArray(rawFound.variations) && rawFound.variations.length > 0)) {
+              const liveVariations = await CommerceService.fetchProductVariations(rawFound.id);
+              if (liveVariations.length > 0) {
+                domainProduct.weightOptions = liveVariations;
+                domainProduct.price = liveVariations[0].salePrice || liveVariations[0].price;
+                domainProduct.defaultWeight = liveVariations[0].label;
+              }
+            }
+            return domainProduct;
+          }
         }
       } catch (err) {
         console.warn('Fallback lookup for slug:', slug);
@@ -269,6 +292,37 @@ export class CommerceService {
     return true;
   }
 
+  /**
+   * Fetch exact product variations from WooCommerce REST API for variable products
+   */
+  static async fetchProductVariations(productId: string | number): Promise<WeightOption[]> {
+    if (!isLiveApiConfigured) return [];
+    try {
+      const response = await apiClient.get(`/products/${productId}/variations`, {
+        params: { per_page: 50 }
+      });
+      if (Array.isArray(response.data) && response.data.length > 0) {
+        return response.data.map((v: any) => {
+          const attrOption = v.attributes?.[0]?.option || v.name || `${v.id}`;
+          const priceVal = parseFloat(v.price || v.regular_price || '0');
+          const saleVal = v.sale_price ? parseFloat(v.sale_price) : undefined;
+          const parsedGrams = parseFloat(String(attrOption).replace(/[^0-9.]/g, '')) || 0;
+
+          return {
+            label: String(attrOption).trim(),
+            grams: parsedGrams,
+            price: priceVal,
+            salePrice: saleVal,
+            inStock: v.stock_status === 'instock',
+          };
+        });
+      }
+    } catch (err) {
+      console.warn(`Could not fetch variations for product ${productId}:`, err);
+    }
+    return [];
+  }
+
   // Helper to map WooCommerce API product payload to domain model
   private static mapWCProductToDomain(wc: any): Product {
     const defaultCraftImg = 'https://images.unsplash.com/photo-1603909223429-69bb7101f420?auto=format&fit=crop&w=1000&q=80';
@@ -305,6 +359,48 @@ export class CommerceService {
       strainType = 'Hybrid';
     }
 
+    // Parse weight options dynamically from WooCommerce Attributes
+    let weightOptions: WeightOption[] = [];
+
+    const weightAttr = wc.attributes?.find((a: any) => 
+      a.name?.toLowerCase().includes('weight') || 
+      a.name?.toLowerCase().includes('size') ||
+      a.name?.toLowerCase().includes('quantity')
+    ) || wc.attributes?.[0];
+
+    if (weightAttr && Array.isArray(weightAttr.options) && weightAttr.options.length > 0) {
+      weightOptions = weightAttr.options.map((optStr: string, idx: number) => {
+        const label = String(optStr).trim();
+        const parsedGrams = parseFloat(label.replace(/[^0-9.]/g, '')) || 0;
+        let price = finalPrice;
+        if (idx > 0 && weightOptions[0]?.grams > 0 && parsedGrams > 0) {
+          price = Math.round(finalPrice * (parsedGrams / weightOptions[0].grams) * 0.88 * 100) / 100;
+        }
+
+        return {
+          label: label,
+          grams: parsedGrams,
+          price: price,
+          inStock: true,
+        };
+      });
+    }
+
+    if (weightOptions.length === 0) {
+      const titleMatch = wc.name.match(/(\d+(?:\.\d+)?\s*(?:g|gram|oz|mg))/i);
+      const singleWeight = titleMatch ? titleMatch[1].toUpperCase() : '';
+      if (singleWeight) {
+        weightOptions = [{ label: singleWeight, grams: parseFloat(singleWeight) || 1, price: finalPrice, inStock: true }];
+      } else {
+        weightOptions = [
+          { label: '3.5g', grams: 3.5, price: finalPrice, inStock: true },
+          { label: '7g', grams: 7, price: Math.round(finalPrice * 1.9 * 100) / 100, inStock: true },
+          { label: '14g', grams: 14, price: Math.round(finalPrice * 3.6 * 100) / 100, inStock: true },
+          { label: '28g (1 oz)', grams: 28, price: Math.round(finalPrice * 6.5 * 100) / 100, inStock: true },
+        ];
+      }
+    }
+
     return {
       id: String(wc.id),
       slug: wc.slug || `product-${wc.id}`,
@@ -324,13 +420,8 @@ export class CommerceService {
       cbdPercentage: parseFloat(wc.meta_data?.find((m: any) => m.key === 'cbd_percentage')?.value || '0.1'),
       effects: ['Deep Relaxation', 'Euphoric', 'Nighttime Calm'],
       aroma: ['Pungent Gas', 'Vanilla Terps', 'Earth'],
-      defaultWeight: '3.5g',
-      weightOptions: [
-        { label: '3.5g', grams: 3.5, price: finalPrice, inStock: true },
-        { label: '7g', grams: 7, price: Math.round(finalPrice * 1.9 * 100) / 100, inStock: true },
-        { label: '14g', grams: 14, price: Math.round(finalPrice * 3.6 * 100) / 100, inStock: true },
-        { label: '28g (1 oz)', grams: 28, price: Math.round(finalPrice * 6.5 * 100) / 100, inStock: true },
-      ],
+      defaultWeight: weightOptions[0]?.label || '3.5g',
+      weightOptions: weightOptions,
       shortDescription: wc.short_description ? wc.short_description.replace(/<[^>]*>?/gm, '').trim() : 'Cold-cured AAA+ craft flower delivered same-day across Abbotsford within 1–3 hours.',
       description: wc.description ? wc.description.replace(/<[^>]*>?/gm, '').trim() : 'Cultivated in BC micro-climate greenhouses, hand-trimmed and cured in frosted matte glass cellars.',
       images: images,

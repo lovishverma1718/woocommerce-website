@@ -18,10 +18,12 @@ export const QuickViewModal: React.FC = () => {
   if (!quickViewProduct) return null;
 
   const activeWeight = selectedWeight || quickViewProduct.defaultWeight || '3.5g';
-  const weightOpt = quickViewProduct.weightOptions.find(w => w.label === activeWeight);
+  const weightOpt = quickViewProduct.weightOptions?.find((w) => w.label === activeWeight);
   const currentPrice = weightOpt ? (weightOpt.salePrice || weightOpt.price) : quickViewProduct.price;
+  const isAvailable = quickViewProduct.inStock && (weightOpt ? weightOpt.inStock !== false : true);
 
   const handleAddToCart = () => {
+    if (!isAvailable) return;
     addToCart(quickViewProduct, activeWeight, 1);
     setAdded(true);
     addToast(`Added ${quickViewProduct.name} to cart`, 'success');
@@ -37,10 +39,16 @@ export const QuickViewModal: React.FC = () => {
           <img
             src={quickViewProduct.images[0]}
             alt={quickViewProduct.name}
-            className="w-full h-full object-cover"
+            className={`w-full h-full object-cover ${!isAvailable ? 'opacity-60 grayscale-[30%]' : ''}`}
           />
-          <div className="absolute top-3 left-3 flex gap-1.5">
-            {quickViewProduct.badge && <GlassBadge variant="gold">{quickViewProduct.badge}</GlassBadge>}
+          <div className="absolute top-3 left-3 flex gap-1.5 z-10">
+            {!isAvailable ? (
+              <span className="px-2.5 py-1 text-[11px] font-bold rounded-full bg-red-600 text-white shadow-sm">
+                Out of Stock
+              </span>
+            ) : (
+              quickViewProduct.badge && <GlassBadge variant="gold">{quickViewProduct.badge}</GlassBadge>
+            )}
           </div>
         </div>
 
@@ -81,6 +89,8 @@ export const QuickViewModal: React.FC = () => {
                         className={`px-3 py-1.5 text-xs rounded-lg border font-medium transition-all ${
                           activeWeight === opt.label
                             ? 'bg-forest text-white border-forest shadow-xs'
+                            : opt.inStock === false
+                            ? 'bg-surface text-charcoal-muted border-border line-through opacity-60'
                             : 'bg-surface text-charcoal-muted border-border hover:border-forest/40'
                         }`}
                       >
@@ -109,11 +119,12 @@ export const QuickViewModal: React.FC = () => {
               <GlassButton
                 variant="primary"
                 size="md"
-                className="flex-1 font-bold"
-                icon={added ? <Check className="w-4 h-4" /> : <ShoppingBag className="w-4 h-4 text-gold" />}
+                className={`flex-1 font-bold ${!isAvailable ? 'opacity-50 cursor-not-allowed bg-charcoal/20 text-charcoal-muted' : ''}`}
+                disabled={!isAvailable}
+                icon={!isAvailable ? undefined : added ? <Check className="w-4 h-4" /> : <ShoppingBag className="w-4 h-4 text-gold" />}
                 onClick={handleAddToCart}
               >
-                {added ? 'Added to Cart' : 'Add to Cart'}
+                {!isAvailable ? 'Out of Stock' : added ? 'Added to Cart' : 'Add to Cart'}
               </GlassButton>
             </div>
 

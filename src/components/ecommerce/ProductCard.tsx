@@ -22,15 +22,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [selectedWeight, setSelectedWeight] = useState(product.defaultWeight || '3.5g');
   const [added, setAdded] = useState(false);
 
-  const isFavorite = isInWishlist(product.id);
-
   // Find active weight option price
   const weightOpt = product.weightOptions.find(w => w.label === selectedWeight);
   const currentPrice = weightOpt ? (weightOpt.salePrice || weightOpt.price) : product.price;
 
+  const isAvailable = product.inStock && (weightOpt ? weightOpt.inStock !== false : true);
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!isAvailable) return;
+
     addToCart(product, selectedWeight, 1);
     setAdded(true);
     addToast(`Added ${product.name} (${selectedWeight}) to your cart`, 'success');
@@ -47,7 +49,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     e.preventDefault();
     e.stopPropagation();
     toggleWishlist(product.id);
-    addToast(isFavorite ? `Removed ${product.name} from wishlist` : `Saved ${product.name} to wishlist`, 'info');
   };
 
   return (
@@ -62,34 +63,40 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <img
             src={product.images[0]}
             alt={product.name}
-            className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+            className={`w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out ${!isAvailable ? 'opacity-60 grayscale-[30%]' : ''}`}
             loading="lazy"
           />
         </Link>
 
         {/* Top Left Badges */}
         <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
-          {product.badge && (
-            <GlassBadge variant="gold">{product.badge}</GlassBadge>
-          )}
-          {product.onSale && (
-            <GlassBadge variant="emerald">Sale</GlassBadge>
+          {!isAvailable ? (
+            <span className="px-2.5 py-1 text-[11px] font-bold rounded-full bg-red-600 text-white shadow-sm">
+              Out of Stock
+            </span>
+          ) : (
+            <>
+              {product.badge && (
+                <GlassBadge variant="gold">{product.badge}</GlassBadge>
+              )}
+              {product.onSale && (
+                <GlassBadge variant="emerald">Sale</GlassBadge>
+              )}
+            </>
           )}
         </div>
-
-
 
         {/* Wishlist Heart Button */}
         <button
           onClick={handleWishlistToggle}
           className={`absolute bottom-3 right-3 z-20 p-2.5 rounded-full backdrop-blur-md border transition-all cursor-pointer ${
-            isFavorite
+            isInWishlist(product.id)
               ? 'bg-red-500 text-white border-red-500 shadow-md scale-105'
               : 'bg-white/80 text-charcoal-muted hover:text-red-500 border-white/60 hover:bg-white'
           }`}
           aria-label="Save to Wishlist"
         >
-          <Heart className={`w-4 h-4 ${isFavorite ? 'fill-white' : ''}`} />
+          <Heart className={`w-4 h-4 ${isInWishlist(product.id) ? 'fill-white' : ''}`} />
         </button>
 
         {/* Quick View Floating Overlay Button */}
@@ -146,6 +153,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                   className={`px-2.5 py-1 text-[11px] rounded-lg border font-medium transition-all cursor-pointer ${
                     selectedWeight === opt.label
                       ? 'bg-forest text-white border-forest shadow-xs font-bold'
+                      : opt.inStock === false
+                      ? 'bg-surface text-charcoal-muted border-border line-through opacity-60'
                       : 'bg-surface text-charcoal-muted border-border hover:border-forest/40'
                   }`}
                 >
@@ -174,14 +183,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
           <button
             onClick={handleAddToCart}
-            disabled={!product.inStock}
-            className={`px-3.5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
-              added
-                ? 'bg-emerald text-white shadow-md'
-                : 'bg-forest text-white hover:bg-forest-hover shadow-md hover:shadow-forest/20 active:scale-95'
+            disabled={!isAvailable}
+            className={`px-3.5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all ${
+              !isAvailable
+                ? 'bg-charcoal/20 text-charcoal-muted cursor-not-allowed border border-border shadow-none'
+                : added
+                ? 'bg-emerald text-white shadow-md cursor-pointer'
+                : 'bg-forest text-white hover:bg-forest-hover shadow-md hover:shadow-forest/20 active:scale-95 cursor-pointer'
             }`}
           >
-            {added ? (
+            {!isAvailable ? (
+              <span>Out of Stock</span>
+            ) : added ? (
               <>
                 <Check className="w-4 h-4" />
                 <span>Added</span>

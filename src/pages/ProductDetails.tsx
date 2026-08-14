@@ -75,8 +75,10 @@ export const ProductDetails: React.FC = () => {
   const activeWeightLabel = selectedWeight || product.defaultWeight || '3.5g';
   const weightOpt = product.weightOptions.find(w => w.label === activeWeightLabel);
   const currentUnitPrice = weightOpt ? (weightOpt.salePrice || weightOpt.price) : product.price;
+  const isAvailable = product.inStock && (weightOpt ? weightOpt.inStock !== false : true);
 
   const handleAddToCart = () => {
+    if (!isAvailable) return;
     addToCart(product, activeWeightLabel, quantity);
     setAdded(true);
     addToast(`Added ${quantity}x ${product.name} (${activeWeightLabel}) to cart`, 'success');
@@ -232,14 +234,19 @@ export const ProductDetails: React.FC = () => {
               </h1>
 
               <div className="flex flex-wrap items-center gap-2 pt-1">
-
                 {product.cbdPercentage > 0 && (
                   <GlassBadge variant="emerald">{product.cbdPercentage}% CBD</GlassBadge>
                 )}
-                <span className="inline-flex items-center gap-1 text-xs bg-emerald/10 text-emerald px-2.5 py-1 rounded-full font-semibold">
-                  <Zap className="w-3.5 h-3.5" />
-                  In Stock - Ready for 1–3 Hr Dispatch
-                </span>
+                {!isAvailable ? (
+                  <span className="inline-flex items-center gap-1 text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-bold">
+                    Out of Stock
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-xs bg-emerald/10 text-emerald px-2.5 py-1 rounded-full font-semibold">
+                    <Zap className="w-3.5 h-3.5" />
+                    In Stock - Ready for 1–3 Hr Dispatch
+                  </span>
+                )}
               </div>
 
               <p className="text-sm text-charcoal-muted leading-relaxed font-light pt-2">
@@ -343,11 +350,12 @@ export const ProductDetails: React.FC = () => {
               <GlassButton
                 variant="primary"
                 size="lg"
-                className="w-full font-bold shadow-xl"
-                icon={added ? <Check className="w-5 h-5 text-white" /> : <ShoppingBag className="w-5 h-5 text-gold" />}
+                className={`w-full font-bold shadow-xl ${!isAvailable ? 'opacity-50 cursor-not-allowed bg-charcoal/20 text-charcoal-muted' : ''}`}
+                disabled={!isAvailable}
+                icon={!isAvailable ? undefined : added ? <Check className="w-5 h-5 text-white" /> : <ShoppingBag className="w-5 h-5 text-gold" />}
                 onClick={handleAddToCart}
               >
-                {added ? 'Added to Reserve Cart' : `Add ${quantity}x to Cart • ${formatCurrency(currentUnitPrice * quantity)}`}
+                {!isAvailable ? 'Out of Stock' : added ? 'Added to Reserve Cart' : `Add ${quantity}x to Cart • ${formatCurrency(currentUnitPrice * quantity)}`}
               </GlassButton>
 
               <div className="grid grid-cols-2 gap-3 pt-2 text-xs text-charcoal-muted border-t border-border">

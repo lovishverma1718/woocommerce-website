@@ -115,7 +115,7 @@ export interface Order {
   id: string;
   orderNumber: string;
   createdAt: string;
-  status: 'pending' | 'processing' | 'out_for_delivery' | 'delivered' | 'cancelled';
+  status: 'pending' | 'on-hold' | 'processing' | 'out_for_delivery' | 'delivered' | 'cancelled';
   payload: CheckoutPayload;
   estimatedDeliveryWindow: string;
 }

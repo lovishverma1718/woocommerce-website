@@ -224,8 +224,8 @@ export class CommerceService {
    */
   static async processOrder(payload: CheckoutPayload): Promise<Order> {
     const isInterac = payload.paymentMethod === 'interac_etransfer';
-    // 'on-hold' for Interac E-Transfer or 'processing' for COD triggers WooCommerce order emails instantly!
-    const initialStatus = isInterac ? 'on-hold' : 'processing';
+    // 'processing' status triggers BOTH the Admin New Order email and the Customer Receipt email in WooCommerce!
+    const initialStatus = 'processing';
 
     if (isLiveApiConfigured) {
       try {

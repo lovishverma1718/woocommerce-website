@@ -229,10 +229,11 @@ export class CommerceService {
 
     if (isLiveApiConfigured) {
       try {
+        // Step 1: Create order with status 'pending'
         const response = await apiClient.post('/orders', {
           payment_method: payload.paymentMethod,
           payment_method_title: isInterac ? 'Interac E-Transfer' : 'Cash On Delivery',
-          status: initialStatus,
+          status: 'pending',
           set_paid: false,
           billing: {
             first_name: payload.customer.firstName,
@@ -245,17 +246,38 @@ export class CommerceService {
             state: payload.shipping.province,
             postcode: payload.shipping.postalCode,
           },
+          shipping: {
+            first_name: payload.customer.firstName,
+            last_name: payload.customer.lastName,
+            address_1: payload.shipping.addressLine1,
+            address_2: payload.shipping.addressLine2 || '',
+            city: payload.shipping.city,
+            state: payload.shipping.province,
+            postcode: payload.shipping.postalCode,
+          },
           line_items: payload.items.map(item => ({
             product_id: item.productId,
             quantity: item.quantity,
           })),
         });
 
+        const orderId = response.data.id;
+
+        // Step 2: Trigger WooCommerce status transition (pending -> on-hold / processing)
+        // This transition FORCES WooCommerce REST API to fire the New Order and Customer Receipt emails!
+        try {
+          await apiClient.put(`/orders/${orderId}`, {
+            status: initialStatus,
+          });
+        } catch (statusErr) {
+          console.warn('Order status transition trigger notice:', statusErr);
+        }
+
         return {
-          id: String(response.data.id),
-          orderNumber: `EB-${response.data.id}`,
+          id: String(orderId),
+          orderNumber: `EB-${orderId}`,
           createdAt: new Date().toISOString(),
-          status: response.data.status || initialStatus,
+          status: initialStatus,
           payload,
           estimatedDeliveryWindow: '1–3 Hours (Same Day Dispatch)',
         };

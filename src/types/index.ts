@@ -3,6 +3,7 @@
 export type StrainType = 'Indica' | 'Sativa' | 'Hybrid' | 'High CBD' | 'N/A';
 
 export interface WeightOption {
+  id?: number | string;
   label: string; // e.g., "3.5g", "7g", "14g", "28g"
   grams: number;
   price: number;

@@ -229,6 +229,47 @@ export class CommerceService {
 
     if (isLiveApiConfigured) {
       try {
+        // Map line items with exact variation_id, prices, and weight metadata
+        const line_items = await Promise.all(payload.items.map(async (item) => {
+          let weightOpt = item.product?.weightOptions?.find(w => w.label === item.selectedWeight);
+          let variationId = weightOpt?.id;
+
+          // If variationId is missing but this might be a variable product, look up live variations
+          if (!variationId && !isNaN(Number(item.productId)) && item.selectedWeight) {
+            try {
+              const liveVariations = await CommerceService.fetchProductVariations(item.productId);
+              const matched = liveVariations.find(v => v.label.toLowerCase() === item.selectedWeight.toLowerCase());
+              if (matched?.id) {
+                variationId = matched.id;
+              }
+            } catch (e) {
+              console.warn('Could not lookup variation for order line item:', e);
+            }
+          }
+
+          const lineItem: any = {
+            product_id: parseInt(item.productId, 10) || item.productId,
+            quantity: item.quantity,
+            subtotal: String(item.selectedPrice * item.quantity),
+            total: String(item.selectedPrice * item.quantity),
+          };
+
+          if (variationId) {
+            lineItem.variation_id = typeof variationId === 'string' ? parseInt(variationId, 10) : variationId;
+          }
+
+          if (item.selectedWeight) {
+            lineItem.meta_data = [
+              {
+                key: 'Weight',
+                value: item.selectedWeight,
+              },
+            ];
+          }
+
+          return lineItem;
+        }));
+
         // Step 1: Create order with status 'pending'
         const response = await apiClient.post('/orders', {
           payment_method: payload.paymentMethod,
@@ -255,10 +296,7 @@ export class CommerceService {
             state: payload.shipping.province,
             postcode: payload.shipping.postalCode,
           },
-          line_items: payload.items.map(item => ({
-            product_id: item.productId,
-            quantity: item.quantity,
-          })),
+          line_items,
         });
 
         const orderId = response.data.id;
@@ -332,6 +370,7 @@ export class CommerceService {
           const parsedGrams = parseFloat(String(attrOption).replace(/[^0-9.]/g, '')) || 0;
 
           return {
+            id: v.id,
             label: String(attrOption).trim(),
             grams: parsedGrams,
             price: priceVal,

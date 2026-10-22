@@ -4,7 +4,6 @@ import { BRAND } from '../lib/constants';
 import { Sparkles, ShieldCheck, Truck, Award, HeartHandshake, CheckCircle2, Clock, MapPin, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { GlassButton } from '../components/common/GlassButton';
-import { SEOHelper } from '../components/common/SEOHelper';
 
 export const About: React.FC = () => {
   const timeline = [
@@ -23,10 +22,6 @@ export const About: React.FC = () => {
 
   return (
     <>
-      <SEOHelper
-        title="About EliteBud — Luxury Craft Cannabis Delivery"
-        description="Learn about EliteBud's Abbotsford craft cannabis heritage, 1-3 hour same-day dispatch commitment, and micro-climate curing standards."
-      />
 
       <div className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-20">
         

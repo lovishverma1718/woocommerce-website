@@ -7,7 +7,8 @@ import { GlassButton } from '../common/GlassButton';
 export const AgeGateModal: React.FC = () => {
   const { isAgeVerified, verifyAge } = useAgeGateStore();
 
-  if (isAgeVerified) return null;
+  // Not part of the build-time HTML snapshot; it still shows in the browser.
+  if (import.meta.env.SSR || isAgeVerified) return null;
 
   return (
     <AnimatePresence>

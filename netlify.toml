@@ -2,8 +2,28 @@
   command = "npm run build"
   publish = "dist"
 
-# Single-Page Application (SPA) Client Routing Fallback
+# Static pages (/, /shop, /about, /faq, /contact, /privacy-policy, /terms) are
+# prerendered into dist/ at build time and served as real files.
+#
+# Only the dynamic app routes fall back to the SPA shell. Anything else that has
+# no file returns dist/404.html with a real 404 status (no more soft 404s).
+
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
+  from = "/product/*"
+  to = "/app.html"
   status = 200
+
+[[redirects]]
+  from = "/cart"
+  to = "/app.html"
+  status = 200
+
+[[redirects]]
+  from = "/checkout"
+  to = "/app.html"
+  status = 200
+
+[[headers]]
+  for = "/sitemap.xml"
+  [headers.values]
+    Content-Type = "application/xml; charset=utf-8"

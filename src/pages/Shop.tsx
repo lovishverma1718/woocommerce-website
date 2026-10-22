@@ -6,6 +6,7 @@ import { useProducts } from '../hooks/useProducts';
 import { useFilterStore } from '../store/useFilterStore';
 import { GlassBadge } from '../components/common/GlassBadge';
 import { RotateCcw } from 'lucide-react';
+import { cn } from '../lib/utils';
 
 export const Shop: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -34,7 +35,9 @@ export const Shop: React.FC = () => {
     }
   }, [urlCategory, urlSearch, setCategory, setSearchQuery]);
 
-  const { data: products = [], isLoading } = useProducts({
+  // isPending (no data yet) rather than isLoading: the prerendered HTML is built without
+  // fetching, and must show the same loading state the browser shows, not "No Products Found".
+  const { data: products = [], isPending } = useProducts({
     searchQuery,
     category,
     strainType,
@@ -56,7 +59,7 @@ export const Shop: React.FC = () => {
           <h1 className="text-4xl sm:text-5xl font-bold text-forest tracking-tight">
             Craft Product Catalog
           </h1>
-          <span className="text-sm font-semibold text-charcoal-muted">
+          <span className={cn('text-sm font-semibold text-charcoal-muted', isPending && 'invisible')}>
             Showing <strong className="text-forest font-bold">{products.length}</strong> products
           </span>
         </div>
@@ -92,7 +95,7 @@ export const Shop: React.FC = () => {
       <div className="flex flex-col lg:flex-row gap-8 items-start">
         <FilterBar />
         <div className="flex-1 w-full">
-          <ProductGrid products={products} isLoading={isLoading} />
+          <ProductGrid products={products} isLoading={isPending} />
         </div>
       </div>
 

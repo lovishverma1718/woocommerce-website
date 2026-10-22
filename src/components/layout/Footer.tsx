@@ -94,7 +94,8 @@ export const Footer: React.FC = () => {
 
         {/* Bottom copyright & payment methods */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-charcoal-muted">
-          <p>© {new Date().getFullYear()} EliteBud Delivery. All Rights Reserved. Abbotsford, BC, Canada.</p>
+          {/* The year is baked in at build time; do not fail hydration over it on New Year's Day. */}
+          <p suppressHydrationWarning>© {new Date().getFullYear()} EliteBud Delivery. All Rights Reserved. Abbotsford, BC, Canada.</p>
           <div className="flex items-center gap-4 font-medium">
             <span className="bg-white px-3 py-1.5 rounded-lg border border-border">Interac E-Transfer</span>
             <span className="bg-white px-3 py-1.5 rounded-lg border border-border">Cash On Delivery</span>

@@ -5,6 +5,7 @@ import { useCartStore } from '../../store/useCartStore';
 import { useUIStore } from '../../store/useUIStore';
 import { BRAND } from '../../lib/constants';
 import { GlassButton } from '../common/GlassButton';
+import { useClientReady } from '../../lib/prerender';
 
 export const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -12,6 +13,8 @@ export const Navbar: React.FC = () => {
   const { getItemCount, openCart } = useCartStore();
   const { openSearch } = useUIStore();
   const itemCount = getItemCount();
+  // The cart lives in localStorage, which the prerendered HTML cannot know.
+  const showCartCount = useClientReady();
 
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -34,9 +37,12 @@ export const Navbar: React.FC = () => {
           
           {/* Left: Official Brand Logo (2.5x Larger) */}
           <Link to="/" className="flex items-center group py-2">
+            {/* width/height give the logo its aspect ratio before it loads, so the links never shift. */}
             <img
               src="/logo.png"
               alt="EliteBud - Best Bud In Town"
+              width={800}
+              height={533}
               className="h-24 sm:h-28 w-auto object-contain transition-transform group-hover:scale-105"
             />
           </Link>
@@ -80,7 +86,7 @@ export const Navbar: React.FC = () => {
               aria-label="Shopping Cart"
             >
               <ShoppingBag className="w-5 h-5" />
-              {itemCount > 0 && (
+              {showCartCount && itemCount > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-gold text-forest font-bold text-[11px] rounded-full flex items-center justify-center shadow-md animate-pulse">
                   {itemCount}
                 </span>

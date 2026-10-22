@@ -3,6 +3,9 @@ import { Filter, RotateCcw, Search } from 'lucide-react';
 import { useFilterStore } from '../../store/useFilterStore';
 import { useCategories } from '../../hooks/useProducts';
 
+// The shop has six product categories.
+const CATEGORY_PLACEHOLDER_ROWS = 6;
+
 export const FilterBar: React.FC = () => {
   const {
     searchQuery,
@@ -20,7 +23,7 @@ export const FilterBar: React.FC = () => {
     resetFilters,
   } = useFilterStore();
 
-  const { data: categories = [] } = useCategories();
+  const { data: categories = [], isPending: categoriesPending } = useCategories();
 
   const strainOptions = ['all', 'Indica', 'Sativa', 'Hybrid', 'High CBD'];
 
@@ -75,6 +78,10 @@ export const FilterBar: React.FC = () => {
           >
             All Categories
           </button>
+          {/* Placeholder rows, sized like the buttons, until categories load: keeps the filters below from jumping. */}
+          {categoriesPending && Array.from({ length: CATEGORY_PLACEHOLDER_ROWS }).map((_, i) => (
+            <div key={i} className="h-8 rounded-lg bg-surface-secondary animate-pulse" />
+          ))}
           {categories.map((cat) => (
             <button
               key={cat.id}

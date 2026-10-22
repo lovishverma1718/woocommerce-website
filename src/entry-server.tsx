@@ -11,7 +11,7 @@ import { renderToString } from 'react-dom/server';
 import { StaticRouter } from 'react-router-dom/server';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppRouter } from './routes/AppRouter';
-import { MOCK_FAQS } from './api/mockData';
+import { seedStaticQueryData } from './lib/prerender';
 
 export { ROUTE_META, NOT_FOUND_META, SITE_URL, DEFAULT_OG_IMAGE, canonicalUrl } from './seo/config';
 export { routeSchema } from './seo/schema';
@@ -20,8 +20,8 @@ export function render(url: string): string {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   });
-  // FAQs are static site content (not from WooCommerce), safe to include.
-  queryClient.setQueryData(['faqs'], MOCK_FAQS);
+  // Static site content only (FAQs). The browser seeds the same data in App.tsx.
+  seedStaticQueryData(queryClient);
 
   return renderToString(
     <QueryClientProvider client={queryClient}>

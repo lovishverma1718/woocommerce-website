@@ -3,8 +3,12 @@ import { motion } from 'framer-motion';
 import { MapPin, Clock, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { DELIVERY_ZONES } from '../../lib/constants';
 import { GlassCard } from '../common/GlassCard';
+import { useFirstPrerenderedLoad } from '../../lib/prerender';
 
 export const DeliveryAreasGrid: React.FC = () => {
+  // Prerendered pages are already visible: skip the entrance animation on that first load.
+  const isFirst = useFirstPrerenderedLoad();
+
   return (
     <section className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
@@ -27,7 +31,7 @@ export const DeliveryAreasGrid: React.FC = () => {
           {DELIVERY_ZONES.map((zone, i) => (
             <motion.div
               key={zone.name}
-              initial={{ opacity: 0, y: 20 }}
+              initial={isFirst ? false : { opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.08 }}

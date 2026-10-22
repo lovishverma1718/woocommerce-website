@@ -4,8 +4,12 @@ import { motion } from 'framer-motion';
 import { ShieldCheck, Truck, CreditCard, Clock, ArrowRight, Sparkles, Mail } from 'lucide-react';
 import { GlassButton } from '../common/GlassButton';
 import { BRAND } from '../../lib/constants';
+import { useFirstPrerenderedLoad } from '../../lib/prerender';
 
 export const Hero: React.FC = () => {
+  // Prerendered pages are already visible: skip the entrance animation on that first load.
+  const isFirst = useFirstPrerenderedLoad();
+
   return (
     <section className="relative overflow-hidden pt-12 pb-20 lg:pt-20 lg:pb-32 bg-gradient-to-b from-surface via-white to-white">
       {/* Background Subtle Luxury Light Shapes */}
@@ -17,7 +21,7 @@ export const Hero: React.FC = () => {
           
           {/* Left Hero Typography & CTAs */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={isFirst ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="lg:col-span-7 space-y-8 text-left"
@@ -113,7 +117,7 @@ export const Hero: React.FC = () => {
 
           {/* Right Hero Visual Showcase */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
+            initial={isFirst ? false : { opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className="lg:col-span-5 relative"

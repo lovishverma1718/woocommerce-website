@@ -66,10 +66,18 @@ function buildHead({ title, description, path: routePath, noindex, schema = [] }
 
 /**
  * Framer Motion renders entrance animations with an inline opacity:0 starting style.
- * In a static snapshot that would leave text invisible to crawlers, so we drop it.
- * The live app re-renders on load and animates as usual.
+ * Components skip that on prerendered pages (useFirstPrerenderedLoad in src/lib/prerender.ts).
+ * Safety net: unhide anything that was missed so crawlers still see it, and warn, because
+ * that element will blink when the app mounts.
  */
-const revealMotion = (html) => html.replace(/opacity:\s*0(?:\.0+)?(?:;|(?="))/g, '');
+const HIDDEN_MOTION_STYLE = /opacity:\s*0(?:\.0+)?(?:;|(?="))/g;
+const revealMotion = (html, route) => {
+  const missed = html.match(HIDDEN_MOTION_STYLE)?.length ?? 0;
+  if (missed) {
+    console.warn(`  prerender  WARNING ${route}: ${missed} element(s) rendered hidden; use useFirstPrerenderedLoad()`);
+  }
+  return html.replace(HIDDEN_MOTION_STYLE, '');
+};
 
 function page({ head, body }) {
   const base = stripManagedHead(template);
@@ -102,7 +110,7 @@ await write(
 
 const routes = Object.values(ROUTE_META).filter((r) => r.prerender);
 for (const meta of routes) {
-  const body = revealMotion(render(meta.path));
+  const body = revealMotion(render(meta.path), meta.path);
   const html = page({
     head: buildHead({ ...meta, schema: routeSchema(meta.path) }),
     body,
@@ -114,7 +122,7 @@ await write(
   '404.html',
   page({
     head: buildHead({ ...NOT_FOUND_META, path: undefined }),
-    body: revealMotion(render('/__page-not-found__')),
+    body: revealMotion(render('/__page-not-found__'), '404'),
   })
 );
 

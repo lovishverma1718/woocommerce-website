@@ -1,10 +1,22 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { App } from './App'
+import { setFirstPrerenderedLoad } from './lib/prerender'
 import './styles/index.css'
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+const rootEl = document.getElementById('root')!
+const app = (
   <React.StrictMode>
     <App />
-  </React.StrictMode>,
+  </React.StrictMode>
 )
+
+// Static pages arrive prerendered (see scripts/prerender.mjs). Hydrate them, so React keeps
+// the existing DOM (loaded images, scroll position, running CSS animations) instead of
+// replacing it. Their first render matches the static HTML exactly (see src/lib/prerender.ts).
+if (rootEl.hasChildNodes()) {
+  setFirstPrerenderedLoad(true)
+  ReactDOM.hydrateRoot(rootEl, app)
+} else {
+  ReactDOM.createRoot(rootEl).render(app)
+}

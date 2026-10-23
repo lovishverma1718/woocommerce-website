@@ -2,6 +2,33 @@
 <html lang="en" class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
+    <!-- Age gate cover: unverified visitors see a blurred page from the first frame, never the
+         page itself. AgeGateModal removes it once its own backdrop is on screen. -->
+    <script>
+      (function () {
+        var html = document.documentElement;
+        try {
+          var saved = JSON.parse(localStorage.getItem('elitebud-age-verification-v1') || 'null');
+          if (saved && saved.state && saved.state.isAgeVerified === true) return;
+        } catch (e) {}
+        html.classList.add('age-gate-pending');
+        // Failsafe: if the app never mounts, do not leave the page stuck behind the blur.
+        setTimeout(function () { html.classList.remove('age-gate-pending'); }, 10000);
+      })();
+    </script>
+    <style>
+      /* Identical to the AgeGateModal backdrop (bg-charcoal/60 backdrop-blur-xl), one layer under it (z-50). */
+      html.age-gate-pending::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 49;
+        background-color: #20212499;
+        /* autoprefixer: ignore next */
+        -webkit-backdrop-filter: blur(24px);
+        backdrop-filter: blur(24px);
+      }
+    </style>
     <link rel="icon" type="image/png" href="/logo.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <link rel="canonical" href="https://elitebud.ca/" />

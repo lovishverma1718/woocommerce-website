@@ -11,6 +11,7 @@ import { ProductCard } from '../components/ecommerce/ProductCard';
 import { Accordion } from '../components/common/Accordion';
 import { Modal } from '../components/common/Modal';
 import { SEOHelper } from '../components/common/SEOHelper';
+import { breadcrumbSchema, canonicalUrl } from '../seo/config';
 import { formatCurrency } from '../lib/utils';
 import { ShoppingBag, Check, ShieldCheck, Clock, Truck, Plus, Minus, ArrowLeft, Star, Maximize2, Award, Zap } from 'lucide-react';
 
@@ -59,6 +60,8 @@ export const ProductDetails: React.FC = () => {
   if (!product) {
     return (
       <div className="py-24 max-w-xl mx-auto px-4 text-center space-y-4">
+        <SEOHelper title="Product Not Available | EliteBud" noindex />
+
         <h2 className="text-2xl font-bold text-forest">Reserve Selection Unavailable</h2>
         <p className="text-charcoal-muted text-sm">
           The requested product is currently rotated out of stock.
@@ -134,26 +137,47 @@ export const ProductDetails: React.FC = () => {
     }
   ];
 
+  const metaDescription = (product.shortDescription || product.description || '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 160);
+
   return (
     <>
       <SEOHelper
-        title={product.name}
-        description={product.shortDescription}
+        title={`${product.name} | Weed Delivery Abbotsford | EliteBud`}
+        description={metaDescription}
+        path={`/product/${product.slug}`}
         type="product"
-        schemaData={{
-          '@context': 'https://schema.org/',
-          '@type': 'Product',
-          name: product.name,
-          image: product.images,
-          description: product.shortDescription,
-          sku: product.id,
-          offers: {
-            '@type': 'Offer',
-            priceCurrency: 'CAD',
-            price: currentUnitPrice,
-            availability: 'https://schema.org/InStock',
+        image={product.images[0]}
+        schemaData={[
+          {
+            '@context': 'https://schema.org/',
+            '@type': 'Product',
+            name: product.name,
+            image: product.images,
+            description: metaDescription,
+            sku: product.id,
+            category: product.category,
+            url: canonicalUrl(`/product/${product.slug}`),
+            brand: { '@type': 'Brand', name: 'EliteBud' },
+            offers: {
+              '@type': 'Offer',
+              url: canonicalUrl(`/product/${product.slug}`),
+              priceCurrency: 'CAD',
+              price: currentUnitPrice,
+              availability: product.inStock
+                ? 'https://schema.org/InStock'
+                : 'https://schema.org/OutOfStock',
+            },
           },
-        }}
+          breadcrumbSchema([
+            { name: 'Home', path: '/' },
+            { name: 'Shop', path: '/shop' },
+            { name: product.name, path: `/product/${product.slug}` },
+          ]),
+        ]}
       />
 
       <div className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">

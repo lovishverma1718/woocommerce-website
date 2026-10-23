@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { DeliveryBanner } from './DeliveryBanner';
 import { Navbar } from './Navbar';
@@ -11,8 +11,13 @@ import { AgeGateModal } from './AgeGateModal';
 
 export const LayoutContainer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { pathname } = useLocation();
+  const lastPathname = useRef(pathname);
 
+  // Scroll to top on route changes only. Not on the first mount: the visitor may already
+  // have scrolled the prerendered page before the app loaded.
   useEffect(() => {
+    if (pathname === lastPathname.current) return;
+    lastPathname.current = pathname;
     window.scrollTo(0, 0);
   }, [pathname]);
 

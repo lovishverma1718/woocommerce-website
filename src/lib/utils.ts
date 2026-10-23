@@ -15,6 +15,11 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+export const STORE_STATUS_TEXT = {
+  open: 'Open Now (10am–11pm)',
+  closed: 'Opening Today at 10:00 AM',
+} as const;
+
 export function isStoreOpen(): { isOpen: boolean; text: string } {
   const now = new Date();
   const hours = now.getHours();
@@ -22,7 +27,7 @@ export function isStoreOpen(): { isOpen: boolean; text: string } {
   const isOpen = hours >= BRAND.hoursOpen && hours < BRAND.hoursClose;
   return {
     isOpen,
-    text: isOpen ? 'Open Now (10am–11pm)' : 'Opening Today at 10:00 AM',
+    text: isOpen ? STORE_STATUS_TEXT.open : STORE_STATUS_TEXT.closed,
   };
 }
 

@@ -1,11 +1,27 @@
-import React from 'react';
+import React, { useLayoutEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck } from 'lucide-react';
 import { useAgeGateStore } from '../../store/useAgeGateStore';
 import { GlassButton } from '../common/GlassButton';
+import { useClientReady } from '../../lib/prerender';
 
 export const AgeGateModal: React.FC = () => {
+  // Not part of the build-time HTML snapshot, so on prerendered pages it mounts right after
+  // hydration. Until then the cover from index.html hides the page.
+  const ready = useClientReady();
+  if (import.meta.env.SSR || !ready) return null;
+  return <AgeGateDialog />;
+};
+
+const AgeGateDialog: React.FC = () => {
   const { isAgeVerified, verifyAge } = useAgeGateStore();
+
+  // index.html covers the page for unverified visitors (html.age-gate-pending) until the app
+  // loads. Drop that cover in the same commit that adds the backdrop below, so no frame shows
+  // the page unblurred, and no frame shows both (a darker double backdrop).
+  useLayoutEffect(() => {
+    document.documentElement.classList.remove('age-gate-pending');
+  }, []);
 
   if (isAgeVerified) return null;
 

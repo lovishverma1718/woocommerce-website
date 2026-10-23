@@ -2,8 +2,12 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Truck, ShieldCheck, Sparkles, Zap, Lock, Headset } from 'lucide-react';
 import { GlassCard } from '../common/GlassCard';
+import { useFirstPrerenderedLoad } from '../../lib/prerender';
 
 export const DeliveryHighlights: React.FC = () => {
+  // Prerendered pages are already visible: skip the entrance animation on that first load.
+  const isFirst = useFirstPrerenderedLoad();
+
   const highlights = [
     {
       icon: <Truck className="w-6 h-6 text-gold" />,
@@ -59,7 +63,7 @@ export const DeliveryHighlights: React.FC = () => {
           {highlights.map((item, index) => (
             <motion.div
               key={item.title}
-              initial={{ opacity: 0, y: 20 }}
+              initial={isFirst ? false : { opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: index * 0.08 }}

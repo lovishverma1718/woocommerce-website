@@ -1,10 +1,14 @@
 import React from 'react';
 import { Truck, ShieldCheck, Clock, Phone } from 'lucide-react';
 import { BRAND } from '../../lib/constants';
-import { isStoreOpen } from '../../lib/utils';
+import { STORE_STATUS_TEXT, cn, isStoreOpen } from '../../lib/utils';
+import { useClientReady } from '../../lib/prerender';
 
 export const DeliveryBanner: React.FC = () => {
   const storeStatus = isStoreOpen();
+  // Open or closed depends on the visitor's clock, not the build server's, so the text is
+  // filled in after mount. Both texts share one grid cell, so the slot never changes width.
+  const showStoreStatus = useClientReady();
 
   return (
     <div className="glass-banner text-white text-xs sm:text-sm py-2.5 px-4 sticky top-0 z-40">
@@ -21,7 +25,16 @@ export const DeliveryBanner: React.FC = () => {
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             <Clock className="w-4 h-4 text-gold" />
-            <span className="font-semibold text-gold-light">{storeStatus.text}</span>
+            <span className="grid font-semibold text-gold-light">
+              {Object.values(STORE_STATUS_TEXT).map((text) => {
+                const active = showStoreStatus && text === storeStatus.text;
+                return (
+                  <span key={text} aria-hidden={!active} className={cn('col-start-1 row-start-1', !active && 'invisible')}>
+                    {text}
+                  </span>
+                );
+              })}
+            </span>
           </div>
         </div>
 

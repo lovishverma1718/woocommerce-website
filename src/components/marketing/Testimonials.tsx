@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Star, Quote, CheckCircle2, User } from 'lucide-react';
 import { GlassCard } from '../common/GlassCard';
+import { useFirstPrerenderedLoad } from '../../lib/prerender';
 
 interface Testimonial {
   id: string;
@@ -53,6 +54,9 @@ const REVIEWS: Testimonial[] = [
 ];
 
 export const Testimonials: React.FC = () => {
+  // Prerendered pages are already visible: skip the entrance animation on that first load.
+  const isFirst = useFirstPrerenderedLoad();
+
   return (
     <section className="py-20 bg-surface">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
@@ -75,7 +79,7 @@ export const Testimonials: React.FC = () => {
           {REVIEWS.map((review, i) => (
             <motion.div
               key={review.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={isFirst ? false : { opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.1 }}

@@ -3,7 +3,6 @@ import { Phone, Mail, Clock, MapPin, Send, CheckCircle2, ShieldCheck, Navigation
 import { BRAND, DELIVERY_ZONES } from '../lib/constants';
 import { GlassCard } from '../components/common/GlassCard';
 import { GlassButton } from '../components/common/GlassButton';
-import { SEOHelper } from '../components/common/SEOHelper';
 
 export const Contact: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
@@ -18,11 +17,6 @@ export const Contact: React.FC = () => {
 
   return (
     <>
-      <SEOHelper
-        title="Contact Abbotsford Dispatch — EliteBud"
-        description="Contact EliteBud Abbotsford delivery dispatch line at +1 (236) 883-6014 or safepayabby@gmail.com for direct order status and delivery updates."
-        type="local"
-      />
 
       <div className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         

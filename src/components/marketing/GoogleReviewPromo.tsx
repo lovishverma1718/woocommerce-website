@@ -3,12 +3,16 @@ import { motion } from 'framer-motion';
 import { Star, Gift, ExternalLink, Sparkles } from 'lucide-react';
 import { GlassButton } from '../common/GlassButton';
 import { BRAND } from '../../lib/constants';
+import { useFirstPrerenderedLoad } from '../../lib/prerender';
 
 export const GoogleReviewPromo: React.FC = () => {
+  // Prerendered pages are already visible: skip the entrance animation on that first load.
+  const isFirst = useFirstPrerenderedLoad();
+
   return (
     <section className="py-16 my-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <motion.div
-        initial={{ opacity: 0, scale: 0.98 }}
+        initial={isFirst ? false : { opacity: 0, scale: 0.98 }}
         whileInView={{ opacity: 1, scale: 1 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}

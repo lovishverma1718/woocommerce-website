@@ -6,13 +6,34 @@ import { GlassButton } from '../components/common/GlassButton';
 
 export const Contact: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '', email: '', message: '' });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Sent to Netlify Forms (form "contact", detected from the prerendered /contact page).
+  // Netlify emails each submission to the address set in the Netlify dashboard.
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 4000);
-    setForm({ name: '', phone: '', email: '', message: '' });
+    if (sending) return;
+    setSending(true);
+    setSendError(false);
+    try {
+      const body = new URLSearchParams(new FormData(e.currentTarget) as any).toString();
+      const res = await fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body,
+      });
+      if (!res.ok) throw new Error(`Form submit failed: ${res.status}`);
+      setSubmitted(true);
+      setTimeout(() => setSubmitted(false), 4000);
+      setForm({ name: '', phone: '', email: '', message: '' });
+    } catch (err) {
+      console.warn(err);
+      setSendError(true);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -115,12 +136,26 @@ export const Contact: React.FC = () => {
                   </p>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form
+                  name="contact"
+                  method="POST"
+                  data-netlify="true"
+                  netlify-honeypot="bot-field"
+                  onSubmit={handleSubmit}
+                  className="space-y-4"
+                >
+                  <input type="hidden" name="form-name" value="contact" />
+                  <p hidden>
+                    <label>
+                      Leave this empty: <input name="bot-field" tabIndex={-1} autoComplete="off" />
+                    </label>
+                  </p>
                   <div>
                     <label className="text-xs font-bold text-charcoal block mb-1">Your Full Name *</label>
                     <input
                       required
                       type="text"
+                      name="name"
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
                       placeholder="Marcus Vance"
@@ -134,6 +169,7 @@ export const Contact: React.FC = () => {
                       <input
                         required
                         type="tel"
+                        name="phone"
                         value={form.phone}
                         onChange={(e) => setForm({ ...form, phone: e.target.value })}
                         placeholder="(236) 000-0000"
@@ -146,6 +182,7 @@ export const Contact: React.FC = () => {
                       <input
                         required
                         type="email"
+                        name="email"
                         value={form.email}
                         onChange={(e) => setForm({ ...form, email: e.target.value })}
                         placeholder="marcus@example.com"
@@ -159,6 +196,7 @@ export const Contact: React.FC = () => {
                     <textarea
                       required
                       rows={4}
+                      name="message"
                       value={form.message}
                       onChange={(e) => setForm({ ...form, message: e.target.value })}
                       placeholder="How can we assist your delivery today?"
@@ -172,9 +210,15 @@ export const Contact: React.FC = () => {
                     size="lg"
                     className="w-full font-bold"
                     icon={<Send className="w-4 h-4 text-gold" />}
+                    disabled={sending}
                   >
-                    Send Message to Dispatch
+                    {sending ? 'Sending...' : 'Send Message to Dispatch'}
                   </GlassButton>
+                  {sendError && (
+                    <p className="text-xs text-accent-danger text-center">
+                      Your message could not be sent. Please call or text dispatch at {BRAND.phoneFormatted}.
+                    </p>
+                  )}
                 </form>
               )}
             </div>

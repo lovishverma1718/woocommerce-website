@@ -1,6 +1,39 @@
-import { Product, Category, FAQItem, CheckoutPayload, Order, FilterState, StrainType, WeightOption } from '../types';
-import { MOCK_PRODUCTS, MOCK_CATEGORIES, MOCK_FAQS } from '../api/mockData';
+import { Product, Category, FAQItem, CheckoutPayload, Order, FilterState, WeightOption } from '../types';
+import { MOCK_CATEGORIES, MOCK_FAQS } from '../api/mockData';
 import { apiClient, isLiveApiConfigured } from '../api/client';
+import { buildProduct, mapWCVariation } from '../lib/wcMapping';
+
+/**
+ * One shared catalog request (products + variations + categories) served by /api/catalog,
+ * which is cached at the CDN. Every list, product page and category view reuses it, so a
+ * visit makes one request instead of ~100 direct WooCommerce calls.
+ */
+interface CatalogResponse {
+  products: any[];
+  variations: Record<string, any[]>;
+  categories: any[] | null;
+}
+const CATALOG_TTL_MS = 60 * 1000;
+let catalogCache: { at: number; promise: Promise<CatalogResponse> } | null = null;
+
+/** Tokens issued by /api/order, needed to mark that order as payment sent. */
+const orderTokens = new Map<string, string>();
+
+function loadCatalog(): Promise<CatalogResponse> {
+  if (catalogCache && Date.now() - catalogCache.at < CATALOG_TTL_MS) return catalogCache.promise;
+  const promise = apiClient.get('/catalog', { timeout: 40000 }).then(r => r.data as CatalogResponse);
+  catalogCache = { at: Date.now(), promise };
+  // Never keep a failed request around: the next call retries.
+  promise.catch(() => { if (catalogCache?.promise === promise) catalogCache = null; });
+  return promise;
+}
+
+/** All catalog products mapped to the domain model (same mapping as before). */
+async function loadDomainProducts(): Promise<Product[]> {
+  const data = await loadCatalog();
+  if (!Array.isArray(data?.products)) throw new Error('Invalid catalog response');
+  return data.products.map((wc: any) => buildProduct(wc, data.variations?.[String(wc.id)]));
+}
 
 export class CommerceService {
   /**
@@ -35,28 +68,9 @@ export class CommerceService {
   static async getProducts(filters?: Partial<FilterState>): Promise<Product[]> {
     if (isLiveApiConfigured) {
       try {
-        // Fetch all published products from WooCommerce without passing unmapped string category params
-        const response = await apiClient.get('/products', {
-          params: {
-            per_page: 100,
-          }
-        });
-
-        if (Array.isArray(response.data)) {
-          let liveProducts = await Promise.all(
-            response.data.map(async (wc: any) => {
-              const domainProduct = CommerceService.mapWCProductToDomain(wc);
-              if (wc.type === 'variable' || (Array.isArray(wc.variations) && wc.variations.length > 0)) {
-                const liveVariations = await CommerceService.fetchProductVariations(wc.id);
-                if (liveVariations.length > 0) {
-                  domainProduct.weightOptions = liveVariations;
-                  domainProduct.price = liveVariations[0].salePrice || liveVariations[0].price;
-                  domainProduct.defaultWeight = liveVariations[0].label;
-                }
-              }
-              return domainProduct;
-            })
-          );
+        // Products + variations come from the shared, CDN cached catalog (/api/catalog)
+        {
+          let liveProducts = await loadDomainProducts();
 
           // Apply client-side search query
           if (filters?.searchQuery) {
@@ -131,20 +145,11 @@ export class CommerceService {
   static async getProductBySlug(slug: string): Promise<Product | null> {
     if (isLiveApiConfigured) {
       try {
-        const response = await apiClient.get('/products', { params: { per_page: 100 } });
-        if (Array.isArray(response.data)) {
-          const rawFound = response.data.find((wc: any) => wc.slug === slug || String(wc.id) === slug);
+        const data = await loadCatalog();
+        if (Array.isArray(data?.products)) {
+          const rawFound = data.products.find((wc: any) => wc.slug === slug || String(wc.id) === slug);
           if (rawFound) {
-            const domainProduct = CommerceService.mapWCProductToDomain(rawFound);
-            if (rawFound.type === 'variable' || (Array.isArray(rawFound.variations) && rawFound.variations.length > 0)) {
-              const liveVariations = await CommerceService.fetchProductVariations(rawFound.id);
-              if (liveVariations.length > 0) {
-                domainProduct.weightOptions = liveVariations;
-                domainProduct.price = liveVariations[0].salePrice || liveVariations[0].price;
-                domainProduct.defaultWeight = liveVariations[0].label;
-              }
-            }
-            return domainProduct;
+            return buildProduct(rawFound, data.variations?.[String(rawFound.id)]);
           }
         }
       } catch (err) {
@@ -176,9 +181,9 @@ export class CommerceService {
         // Get all live products to calculate accurate category counts
         const allLiveProducts = await CommerceService.getProducts();
 
-        const response = await apiClient.get('/products/categories');
-        if (Array.isArray(response.data) && response.data.length > 0) {
-          const filtered = response.data.filter((c: any) => c.slug !== 'uncategorized' && c.name.toLowerCase() !== 'uncategorized');
+        const { categories } = await loadCatalog();
+        if (Array.isArray(categories) && categories.length > 0) {
+          const filtered = categories.filter((c: any) => c.slug !== 'uncategorized' && c.name.toLowerCase() !== 'uncategorized');
           const mapped: Category[] = filtered.map((c: any) => {
             const matchMock = MOCK_CATEGORIES.find(m => m.slug === c.slug || c.slug.includes(m.slug) || c.name.toLowerCase().includes(m.slug));
             
@@ -220,137 +225,62 @@ export class CommerceService {
   }
 
   /**
-   * Process Checkout order submission in WooCommerce REST API
+   * Create the order through /api/order. The server recomputes every price and the delivery
+   * fee from live WooCommerce data, creates the order and moves it to "processing" (which sends
+   * the WooCommerce emails). If anything fails this THROWS, so the checkout shows an error
+   * instead of a confirmation for an order that does not exist.
    */
   static async processOrder(payload: CheckoutPayload): Promise<Order> {
-    const isInterac = payload.paymentMethod === 'interac_etransfer';
-    // 'processing' status triggers BOTH the Admin New Order email and the Customer Receipt email in WooCommerce!
-    const initialStatus = 'processing';
+    const response = await apiClient
+      .post('/order', {
+        paymentMethod: payload.paymentMethod,
+        customer: payload.customer,
+        shipping: payload.shipping,
+        items: payload.items.map(item => ({
+          productId: item.productId,
+          selectedWeight: item.selectedWeight,
+          quantity: item.quantity,
+          unitPrice: item.selectedPrice,
+        })),
+      }, { timeout: 55000 })
+      .catch((err: any) => {
+        const serverMessage = err?.response?.data?.error;
+        throw new Error(
+          serverMessage ||
+          'We could not confirm your order. Please call or text dispatch before trying again, so you are not charged twice.'
+        );
+      });
 
-    if (isLiveApiConfigured) {
-      try {
-        // Map line items with exact variation_id, prices, and weight metadata
-        const line_items = await Promise.all(payload.items.map(async (item) => {
-          let weightOpt = item.product?.weightOptions?.find(w => w.label === item.selectedWeight);
-          let variationId = weightOpt?.id;
-
-          // If variationId is missing but this might be a variable product, look up live variations
-          if (!variationId && !isNaN(Number(item.productId)) && item.selectedWeight) {
-            try {
-              const liveVariations = await CommerceService.fetchProductVariations(item.productId);
-              const matched = liveVariations.find(v => v.label.toLowerCase() === item.selectedWeight.toLowerCase());
-              if (matched?.id) {
-                variationId = matched.id;
-              }
-            } catch (e) {
-              console.warn('Could not lookup variation for order line item:', e);
-            }
-          }
-
-          const lineItem: any = {
-            product_id: parseInt(item.productId, 10) || item.productId,
-            quantity: item.quantity,
-            subtotal: String(item.selectedPrice * item.quantity),
-            total: String(item.selectedPrice * item.quantity),
-          };
-
-          if (variationId) {
-            lineItem.variation_id = typeof variationId === 'string' ? parseInt(variationId, 10) : variationId;
-          }
-
-          if (item.selectedWeight) {
-            lineItem.meta_data = [
-              {
-                key: 'Weight',
-                value: item.selectedWeight,
-              },
-            ];
-          }
-
-          return lineItem;
-        }));
-
-        // Step 1: Create order with status 'pending'
-        const response = await apiClient.post('/orders', {
-          payment_method: payload.paymentMethod,
-          payment_method_title: isInterac ? 'Interac E-Transfer' : 'Cash On Delivery',
-          status: 'pending',
-          set_paid: false,
-          billing: {
-            first_name: payload.customer.firstName,
-            last_name: payload.customer.lastName,
-            email: payload.customer.email,
-            phone: payload.customer.phone,
-            address_1: payload.shipping.addressLine1,
-            address_2: payload.shipping.addressLine2 || '',
-            city: payload.shipping.city,
-            state: payload.shipping.province,
-            postcode: payload.shipping.postalCode,
-          },
-          shipping: {
-            first_name: payload.customer.firstName,
-            last_name: payload.customer.lastName,
-            address_1: payload.shipping.addressLine1,
-            address_2: payload.shipping.addressLine2 || '',
-            city: payload.shipping.city,
-            state: payload.shipping.province,
-            postcode: payload.shipping.postalCode,
-          },
-          line_items,
-        });
-
-        const orderId = response.data.id;
-
-        // Step 2: Trigger WooCommerce status transition (pending -> on-hold / processing)
-        // This transition FORCES WooCommerce REST API to fire the New Order and Customer Receipt emails!
-        try {
-          await apiClient.put(`/orders/${orderId}`, {
-            status: initialStatus,
-          });
-        } catch (statusErr) {
-          console.warn('Order status transition trigger notice:', statusErr);
-        }
-
-        return {
-          id: String(orderId),
-          orderNumber: `EB-${orderId}`,
-          createdAt: new Date().toISOString(),
-          status: initialStatus,
-          payload,
-          estimatedDeliveryWindow: '1–3 Hours (Same Day Dispatch)',
-        };
-      } catch (err) {
-        console.warn('Using simulation order generation fallback:', err);
-      }
+    const data = response.data;
+    if (!data?.id || !data?.token) {
+      throw new Error('We could not confirm your order. Please call or text dispatch before trying again, so you are not charged twice.');
     }
+    orderTokens.set(String(data.id), data.token);
 
-    // Local order simulation
-    const randomId = Math.floor(100000 + Math.random() * 900000);
     return {
-      id: `ord-${randomId}`,
-      orderNumber: `EB-${randomId}`,
+      id: String(data.id),
+      orderNumber: data.orderNumber || `EB-${data.id}`,
       createdAt: new Date().toISOString(),
-      status: initialStatus,
+      status: 'processing',
       payload,
       estimatedDeliveryWindow: '1–3 Hours (Same Day Dispatch)',
     };
   }
 
   /**
-   * Update WooCommerce Order Status (e.g. to 'payment-sent')
+   * Mark the order as "payment-sent" (the only status the browser may set), using the
+   * one-time token the server issued when the order was created.
    */
   static async updateOrderStatus(orderId: string, status: string): Promise<boolean> {
-    if (isLiveApiConfigured && !orderId.startsWith('ord-')) {
-      try {
-        await apiClient.put(`/orders/${orderId}`, {
-          status: status,
-        });
-        return true;
-      } catch (err) {
-        console.warn('WooCommerce order status update fallback:', err);
-      }
+    const token = orderTokens.get(String(orderId));
+    if (status !== 'payment-sent' || !token) return false;
+    try {
+      await apiClient.post('/order-status', { orderId, token });
+      return true;
+    } catch (err) {
+      console.warn('Order status update failed:', err);
+      return false;
     }
-    return true;
   }
 
   /**
@@ -359,139 +289,14 @@ export class CommerceService {
   static async fetchProductVariations(productId: string | number): Promise<WeightOption[]> {
     if (!isLiveApiConfigured) return [];
     try {
-      const response = await apiClient.get(`/products/${productId}/variations`, {
-        params: { per_page: 50 }
-      });
-      if (Array.isArray(response.data) && response.data.length > 0) {
-        return response.data.map((v: any) => {
-          const attrOption = v.attributes?.[0]?.option || v.name || `${v.id}`;
-          const priceVal = parseFloat(v.price || v.regular_price || '0');
-          const saleVal = v.sale_price ? parseFloat(v.sale_price) : undefined;
-          const parsedGrams = parseFloat(String(attrOption).replace(/[^0-9.]/g, '')) || 0;
-
-          return {
-            id: v.id,
-            label: String(attrOption).trim(),
-            grams: parsedGrams,
-            price: priceVal,
-            salePrice: saleVal,
-            inStock: v.stock_status === 'instock',
-          };
-        });
+      const data = await loadCatalog();
+      const list = data?.variations?.[String(productId)];
+      if (Array.isArray(list) && list.length > 0) {
+        return list.map(mapWCVariation);
       }
     } catch (err) {
       console.warn(`Could not fetch variations for product ${productId}:`, err);
     }
     return [];
-  }
-
-  // Helper to map WooCommerce API product payload to domain model
-  private static mapWCProductToDomain(wc: any): Product {
-    const defaultCraftImg = 'https://images.unsplash.com/photo-1603909223429-69bb7101f420?auto=format&fit=crop&w=1000&q=80';
-    const images = (wc.images && wc.images.length > 0 && wc.images[0].src)
-      ? wc.images.map((img: any) => img.src)
-      : [defaultCraftImg];
-
-    const priceVal = parseFloat(wc.price || wc.regular_price || '0');
-    const regPriceVal = parseFloat(wc.regular_price || wc.price || '0');
-    const salePriceVal = wc.sale_price ? parseFloat(wc.sale_price) : undefined;
-    const finalPrice = priceVal > 0 ? priceVal : 45.00;
-
-    const catName = wc.categories?.[0]?.name || 'Craft Flower';
-    const catSlug = wc.categories?.[0]?.slug || 'flower';
-
-    // Smart strain detection from meta_data, product title, or product description
-    const rawStrain = String(wc.meta_data?.find((m: any) => m.key === 'strain_type' || m.key === 'strain')?.value || '');
-    const nameAndDesc = `${wc.name || ''} ${wc.short_description || ''} ${wc.description || ''}`.toLowerCase();
-    
-    let strainType: StrainType = 'Hybrid';
-    if (rawStrain && ['indica', 'sativa', 'hybrid', 'high cbd'].includes(rawStrain.toLowerCase())) {
-      const lower = rawStrain.toLowerCase();
-      if (lower === 'sativa') strainType = 'Sativa';
-      else if (lower === 'indica') strainType = 'Indica';
-      else if (lower.includes('cbd')) strainType = 'High CBD';
-      else strainType = 'Hybrid';
-    } else if (nameAndDesc.includes('sativa')) {
-      strainType = 'Sativa';
-    } else if (nameAndDesc.includes('indica')) {
-      strainType = 'Indica';
-    } else if (nameAndDesc.includes('cbd')) {
-      strainType = 'High CBD';
-    } else {
-      strainType = 'Hybrid';
-    }
-
-    // Parse weight options dynamically from WooCommerce Attributes
-    let weightOptions: WeightOption[] = [];
-
-    const weightAttr = wc.attributes?.find((a: any) => 
-      a.name?.toLowerCase().includes('weight') || 
-      a.name?.toLowerCase().includes('size') ||
-      a.name?.toLowerCase().includes('quantity')
-    ) || wc.attributes?.[0];
-
-    if (weightAttr && Array.isArray(weightAttr.options) && weightAttr.options.length > 0) {
-      weightOptions = weightAttr.options.map((optStr: string, idx: number) => {
-        const label = String(optStr).trim();
-        const parsedGrams = parseFloat(label.replace(/[^0-9.]/g, '')) || 0;
-        let price = finalPrice;
-        if (idx > 0 && weightOptions[0]?.grams > 0 && parsedGrams > 0) {
-          price = Math.round(finalPrice * (parsedGrams / weightOptions[0].grams) * 0.88 * 100) / 100;
-        }
-
-        return {
-          label: label,
-          grams: parsedGrams,
-          price: price,
-          inStock: true,
-        };
-      });
-    }
-
-    if (weightOptions.length === 0) {
-      const titleMatch = wc.name.match(/(\d+(?:\.\d+)?\s*(?:g|gram|oz|mg))/i);
-      const singleWeight = titleMatch ? titleMatch[1].toUpperCase() : '';
-      if (singleWeight) {
-        weightOptions = [{ label: singleWeight, grams: parseFloat(singleWeight) || 1, price: finalPrice, inStock: true }];
-      } else {
-        weightOptions = [
-          { label: '3.5g', grams: 3.5, price: finalPrice, inStock: true },
-          { label: '7g', grams: 7, price: Math.round(finalPrice * 1.9 * 100) / 100, inStock: true },
-          { label: '14g', grams: 14, price: Math.round(finalPrice * 3.6 * 100) / 100, inStock: true },
-          { label: '28g (1 oz)', grams: 28, price: Math.round(finalPrice * 6.5 * 100) / 100, inStock: true },
-        ];
-      }
-    }
-
-    return {
-      id: String(wc.id),
-      slug: wc.slug || `product-${wc.id}`,
-      name: wc.name,
-      tagline: wc.short_description ? wc.short_description.replace(/<[^>]*>?/gm, '').trim() : 'Private Reserve Small Batch Craft Flower',
-      category: catName,
-      categorySlug: catSlug,
-      price: finalPrice,
-      regularPrice: regPriceVal > 0 ? regPriceVal : finalPrice,
-      salePrice: salePriceVal,
-      onSale: Boolean(wc.on_sale),
-      featured: Boolean(wc.featured || true),
-      inStock: wc.stock_status === 'instock',
-      stockQuantity: wc.stock_quantity || 30,
-      strainType: strainType,
-      thcPercentage: parseFloat(wc.meta_data?.find((m: any) => m.key === 'thc_percentage')?.value || '32.0'),
-      cbdPercentage: parseFloat(wc.meta_data?.find((m: any) => m.key === 'cbd_percentage')?.value || '0.1'),
-      effects: ['Deep Relaxation', 'Euphoric', 'Nighttime Calm'],
-      aroma: ['Pungent Gas', 'Vanilla Terps', 'Earth'],
-      defaultWeight: weightOptions[0]?.label || '3.5g',
-      weightOptions: weightOptions,
-      shortDescription: wc.short_description ? wc.short_description.replace(/<[^>]*>?/gm, '').trim() : 'Cold-cured AAA+ craft flower delivered same-day across Abbotsford within 1–3 hours.',
-      description: wc.description ? wc.description.replace(/<[^>]*>?/gm, '').trim() : 'Cultivated in BC micro-climate greenhouses, hand-trimmed and cured in frosted matte glass cellars.',
-      images: images,
-      attributes: wc.attributes || [],
-      rating: parseFloat(wc.average_rating || '5.0'),
-      reviewCount: wc.rating_count || 18,
-      reviews: [],
-      badge: 'Bestseller',
-    };
   }
 }

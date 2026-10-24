@@ -2,6 +2,7 @@ import { Product, Category, FAQItem, CheckoutPayload, Order, FilterState, Weight
 import { MOCK_CATEGORIES, MOCK_FAQS } from '../api/mockData';
 import { apiClient, isLiveApiConfigured } from '../api/client';
 import { buildProduct, mapWCVariation } from '../lib/wcMapping';
+import { trackPurchase } from '../lib/analytics';
 
 /**
  * One shared catalog request (products + variations + categories) served by /api/catalog,
@@ -256,6 +257,17 @@ export class CommerceService {
       throw new Error('We could not confirm your order. Please call or text dispatch before trying again, so you are not charged twice.');
     }
     orderTokens.set(String(data.id), data.token);
+    trackPurchase({
+      id: String(data.id),
+      total: typeof data.total === 'number' ? data.total : payload.total,
+      items: payload.items.map(i => ({
+        productId: i.productId,
+        name: i.product?.name || i.productId,
+        quantity: i.quantity,
+        price: i.selectedPrice,
+        variant: i.selectedWeight,
+      })),
+    });
 
     return {
       id: String(data.id),

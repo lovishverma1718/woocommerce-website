@@ -2,7 +2,10 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { App } from './App'
 import { setFirstPrerenderedLoad } from './lib/prerender'
+import { installContactClickTracking } from './lib/analytics'
 import './styles/index.css'
+
+installContactClickTracking()
 
 const rootEl = document.getElementById('root')!
 const app = (

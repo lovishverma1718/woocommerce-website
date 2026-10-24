@@ -37,6 +37,32 @@ function stripManagedHead(html) {
     .replace(/<meta (?:name|property)="(?:title|description|robots|og:[a-z:_]+|twitter:[a-z:_]+)"[^>]*>\s*/gi, '');
 }
 
+/**
+ * Optional site wide tags, switched on by Netlify environment variables (no code change):
+ *   GOOGLE_SITE_VERIFICATION  the content value of Search Console's HTML tag verification
+ *   GA4_MEASUREMENT_ID        Google Analytics 4 ID, e.g. G-ABC123XYZ
+ * Values are validated so a typo can never break the page.
+ */
+function siteTags() {
+  const tags = [];
+  const verification = (process.env.GOOGLE_SITE_VERIFICATION || '').trim();
+  if (/^[A-Za-z0-9_-]{10,100}$/.test(verification)) {
+    tags.push(`<meta name="google-site-verification" content="${verification}" />`);
+  } else if (verification) {
+    console.warn('  GOOGLE_SITE_VERIFICATION looks invalid, skipped.');
+  }
+  const ga4 = (process.env.GA4_MEASUREMENT_ID || '').trim().toUpperCase();
+  if (/^G-[A-Z0-9]{4,20}$/.test(ga4)) {
+    tags.push(
+      `<script async src="https://www.googletagmanager.com/gtag/js?id=${ga4}"></script>`,
+      `<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${ga4}');</script>`
+    );
+  } else if (ga4) {
+    console.warn('  GA4_MEASUREMENT_ID looks invalid, skipped.');
+  }
+  return tags;
+}
+
 function buildHead({ title, description, path: routePath, noindex, schema = [] }) {
   const tags = [
     `<title>${escapeText(title)}</title>`,
@@ -61,6 +87,7 @@ function buildHead({ title, description, path: routePath, noindex, schema = [] }
   for (const block of schema) {
     tags.push(`<script type="application/ld+json" data-seo-schema>${safeJson(block)}</script>`);
   }
+  tags.push(...siteTags());
   return tags.map((t) => `    ${t}`).join('\n');
 }
 

@@ -33,9 +33,10 @@ const entries = Object.values(ROUTE_META)
   }));
 
 async function fetchProductEntries() {
-  const base = (process.env.VITE_WOOCOMMERCE_API_URL || '').replace(/\/+$/, '');
-  const ck = (process.env.VITE_WOOCOMMERCE_CONSUMER_KEY || '').trim();
-  const cs = (process.env.VITE_WOOCOMMERCE_CONSUMER_SECRET || '').trim();
+  // Server only names first; the old VITE_ names still work during the switch.
+  const base = (process.env.WC_API_URL || process.env.VITE_WOOCOMMERCE_API_URL || '').replace(/\/+$/, '');
+  const ck = (process.env.WC_CONSUMER_KEY || process.env.VITE_WOOCOMMERCE_CONSUMER_KEY || '').trim();
+  const cs = (process.env.WC_CONSUMER_SECRET || process.env.VITE_WOOCOMMERCE_CONSUMER_SECRET || '').trim();
   if (!base.startsWith('http')) {
     console.warn('  sitemap: WooCommerce API URL not set, skipping product URLs.');
     return [];

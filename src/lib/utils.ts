@@ -20,9 +20,24 @@ export const STORE_STATUS_TEXT = {
   closed: 'Opening Today at 10:00 AM',
 } as const;
 
+/** Current hour (0 to 23) in Abbotsford, BC, whatever the visitor's own time zone is. */
+function currentStoreHour(): number {
+  try {
+    const hour = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Vancouver',
+      hour: 'numeric',
+      hourCycle: 'h23',
+    }).format(new Date());
+    const parsed = parseInt(hour, 10);
+    if (!Number.isNaN(parsed)) return parsed % 24;
+  } catch {
+    // Very old browsers without time zone support: fall back to the device clock.
+  }
+  return new Date().getHours();
+}
+
 export function isStoreOpen(): { isOpen: boolean; text: string } {
-  const now = new Date();
-  const hours = now.getHours();
+  const hours = currentStoreHour();
   // Open 10 AM (10) to 11 PM (23)
   const isOpen = hours >= BRAND.hoursOpen && hours < BRAND.hoursClose;
   return {

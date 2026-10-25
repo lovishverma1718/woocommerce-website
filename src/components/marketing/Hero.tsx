@@ -43,13 +43,13 @@ export const Hero: React.FC = () => {
 
             {/* Headline with Instrument Serif Emphasis */}
             <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-forest leading-[1.08]">
-              Premium Same-Day <br />
-              <span className="font-serif italic font-normal text-gold-hover">Cannabis Delivery</span>
+              Same-Day Weed Delivery <br />
+              <span className="font-serif italic font-normal text-gold-hover">in Abbotsford, BC</span>
             </h1>
 
             {/* Subheadline */}
             <p className="text-lg sm:text-xl text-charcoal-muted max-w-2xl font-light leading-relaxed">
-              Ultra-premium craft flower, solventless live rosin, and artisanal gummies delivered directly across Abbotsford and Fraser Valley within <strong className="text-forest font-semibold">1–3 hours</strong>.
+              Ultra-premium craft flower, solventless live rosin, and artisanal gummies delivered directly across Abbotsford, Mission, Chilliwack, Aldergrove and Langley Township within <strong className="text-forest font-semibold">1–3 hours</strong>.
             </p>
 
             {/* Action Buttons */}

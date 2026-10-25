@@ -8,6 +8,7 @@ import { QuickViewModal } from '../ecommerce/QuickViewModal';
 import { SearchPopover } from '../ecommerce/SearchPopover';
 import { ToastContainer } from '../common/Toast';
 import { AgeGateModal } from './AgeGateModal';
+import { trackPageView } from '../../lib/analytics';
 
 export const LayoutContainer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { pathname } = useLocation();
@@ -19,6 +20,7 @@ export const LayoutContainer: React.FC<{ children: React.ReactNode }> = ({ child
     if (pathname === lastPathname.current) return;
     lastPathname.current = pathname;
     window.scrollTo(0, 0);
+    trackPageView(pathname);
   }, [pathname]);
 
   return (

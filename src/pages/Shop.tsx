@@ -57,12 +57,15 @@ export const Shop: React.FC = () => {
         </span>
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <h1 className="text-4xl sm:text-5xl font-bold text-forest tracking-tight">
-            Craft Product Catalog
+            Buy Weed Online in Abbotsford
           </h1>
           <span className={cn('text-sm font-semibold text-charcoal-muted', isPending && 'invisible')}>
             Showing <strong className="text-forest font-bold">{products.length}</strong> products
           </span>
         </div>
+        <p className="text-sm sm:text-base text-charcoal-muted max-w-3xl">
+          Order flower, edibles, vapes and concentrates online for same day delivery across Abbotsford, Mission, Chilliwack, Aldergrove and Langley Township.
+        </p>
       </div>
 
       {/* Active Filter Pills */}

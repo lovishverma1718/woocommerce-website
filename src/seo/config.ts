@@ -31,7 +31,7 @@ export const AREAS_SERVED = Array.from(
 export const ROUTE_META: Record<string, RouteMeta> = {
   '/': {
     path: '/',
-    title: 'Weed Delivery Abbotsford BC | 1 to 3 Hour Delivery | EliteBud',
+    title: 'Weed Delivery Abbotsford BC | Online Dispensary | EliteBud',
     description:
       'Same day weed delivery in Abbotsford, Mission, Chilliwack, Aldergrove and Langley Township. Delivered in 1 to 3 hours, free over $50. Pay by Interac e-Transfer or cash.',
     prerender: true,
@@ -40,7 +40,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   },
   '/shop': {
     path: '/shop',
-    title: 'Shop Weed Online Abbotsford | Flower, Edibles, Vapes | EliteBud',
+    title: 'Buy Weed Online Abbotsford | Flower, Edibles, Vapes | EliteBud',
     description:
       'Browse premium flower, pre rolls, edibles, THC vapes, concentrates and more. Order online for same day delivery across Abbotsford and the Fraser Valley.',
     prerender: true,
@@ -88,6 +88,15 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     prerender: true,
     changefreq: 'yearly',
     priority: 0.2,
+  },
+  '/weed-delivery-chilliwack': {
+    path: '/weed-delivery-chilliwack',
+    title: 'Weed Delivery Chilliwack BC | Same Day to Sardis & Vedder | EliteBud',
+    description:
+      'Same day weed delivery in Chilliwack, Sardis and Vedder Crossing. Order flower, edibles, vapes and concentrates online. Pay by Interac e-Transfer or cash. 19+.',
+    prerender: true,
+    changefreq: 'weekly',
+    priority: 0.8,
   },
   '/cart': {
     path: '/cart',

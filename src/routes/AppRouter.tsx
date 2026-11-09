@@ -11,6 +11,7 @@ import { FAQ } from '../pages/FAQ';
 import { Contact } from '../pages/Contact';
 import { PrivacyPolicy, Terms } from '../pages/PrivacyPolicy';
 import { NotFound } from '../pages/NotFound';
+import { ChilliwackDelivery } from '../pages/areas/ChilliwackDelivery';
 import { RouteSEO, SEOHelper } from '../components/common/SEOHelper';
 import { NOT_FOUND_META } from '../seo/config';
 
@@ -37,6 +38,7 @@ export const AppRouter: React.FC = () => {
         <Route path="/contact" element={withSEO('/contact', <Contact />)} />
         <Route path="/privacy-policy" element={withSEO('/privacy-policy', <PrivacyPolicy />)} />
         <Route path="/terms" element={withSEO('/terms', <Terms />)} />
+        <Route path="/weed-delivery-chilliwack" element={withSEO('/weed-delivery-chilliwack', <ChilliwackDelivery />)} />
         <Route
           path="*"
           element={

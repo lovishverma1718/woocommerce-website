@@ -52,7 +52,11 @@ export const Footer: React.FC = () => {
               {DELIVERY_ZONES.map((zone) => (
                 <li key={zone.name} className="flex items-center gap-1.5">
                   <MapPin className="w-3.5 h-3.5 text-gold shrink-0" />
-                  <span>{zone.city}</span>
+                  {zone.city === 'Chilliwack' ? (
+                    <Link to="/weed-delivery-chilliwack" className="hover:text-forest transition-colors">{zone.city}</Link>
+                  ) : (
+                    <span>{zone.city}</span>
+                  )}
                 </li>
               ))}
             </ul>

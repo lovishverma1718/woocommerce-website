@@ -86,7 +86,7 @@ export const ChilliwackDelivery: React.FC = () => (
     </section>
 
     <p className="text-sm text-charcoal-muted text-center">
-      Also delivering to <Link to="/" className="text-forest underline">Abbotsford</Link>, Mission, Aldergrove and Langley Township.
+      Also delivering to <Link to="/" className="text-forest underline">Abbotsford</Link>, <Link to="/weed-delivery-mission" className="text-forest underline">Mission</Link>, Aldergrove and Langley Township.
     </p>
   </div>
 );

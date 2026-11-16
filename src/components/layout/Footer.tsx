@@ -52,8 +52,8 @@ export const Footer: React.FC = () => {
               {DELIVERY_ZONES.map((zone) => (
                 <li key={zone.name} className="flex items-center gap-1.5">
                   <MapPin className="w-3.5 h-3.5 text-gold shrink-0" />
-                  {zone.city === 'Chilliwack' ? (
-                    <Link to="/weed-delivery-chilliwack" className="hover:text-forest transition-colors">{zone.city}</Link>
+                  {zone.city === 'Chilliwack' || zone.city === 'Mission' ? (
+                    <Link to={`/weed-delivery-${zone.city.toLowerCase()}`} className="hover:text-forest transition-colors">{zone.city}</Link>
                   ) : (
                     <span>{zone.city}</span>
                   )}

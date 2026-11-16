@@ -10,3 +10,14 @@ export const CHILLIWACK_FAQS = [
   { question: 'How do I pay for my order?', answer: 'You can pay by Interac e-Transfer or with cash on delivery.' },
   { question: 'Do I need ID to receive my order?', answer: 'Yes. You must be 19 or older and show valid government photo ID when your order is delivered.' },
 ];
+
+const mission = DELIVERY_ZONES.find(z => z.city === 'Mission')!;
+const missionTime = mission.estimatedTime.replace(/\s+/g, ' ');
+
+/** Shown on /weed-delivery-mission and used for its FAQPage schema (kept identical). */
+export const MISSION_FAQS = [
+  { question: 'Do you deliver weed to Mission, BC?', answer: `Yes. EliteBud delivers same day across Mission, including Cedar Valley, Hatzic and Silverdale. Most orders arrive in ${missionTime}.` },
+  { question: 'What is the minimum order for Mission delivery?', answer: `The minimum order for Mission is $${mission.minOrder}, and delivery is free on orders over $${mission.freeDeliveryThreshold}.` },
+  { question: 'How do I pay for my order?', answer: 'You can pay by Interac e-Transfer or with cash on delivery.' },
+  { question: 'Do I need ID to receive my order?', answer: 'Yes. You must be 19 or older and show valid government photo ID when your order is delivered.' },
+];

@@ -98,6 +98,15 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     changefreq: 'weekly',
     priority: 0.8,
   },
+  '/weed-delivery-mission': {
+    path: '/weed-delivery-mission',
+    title: 'Weed Delivery Mission BC | Same Day Cannabis Delivery | EliteBud',
+    description:
+      'Same day weed delivery in Mission, BC including Cedar Valley, Hatzic and Silverdale. Order flower, edibles, vapes and concentrates online. Interac e-Transfer or cash. 19+.',
+    prerender: true,
+    changefreq: 'weekly',
+    priority: 0.8,
+  },
   '/cart': {
     path: '/cart',
     title: 'Your Cart | EliteBud',

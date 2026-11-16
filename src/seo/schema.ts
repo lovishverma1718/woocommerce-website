@@ -1,4 +1,4 @@
-import { CHILLIWACK_FAQS } from './areaContent';
+import { CHILLIWACK_FAQS, MISSION_FAQS } from './areaContent';
 import { MOCK_FAQS } from '../api/mockData';
 import {
   ROUTE_META,
@@ -16,6 +16,7 @@ const BREADCRUMB_NAMES: Record<string, string> = {
   '/privacy-policy': 'Privacy Policy',
   '/terms': 'Terms of Service',
   '/weed-delivery-chilliwack': 'Weed Delivery Chilliwack',
+  '/weed-delivery-mission': 'Weed Delivery Mission',
 };
 
 /** JSON-LD blocks for a static route. */
@@ -35,6 +36,7 @@ export const routeSchema = (path: string): object[] => {
   if (path === '/faq') blocks.push(faqPageSchema(MOCK_FAQS));
   if (path === '/contact') blocks.push(localBusinessSchema());
   if (path === '/weed-delivery-chilliwack') blocks.push(faqPageSchema(CHILLIWACK_FAQS));
+  if (path === '/weed-delivery-mission') blocks.push(faqPageSchema(MISSION_FAQS));
   return blocks;
 };
 
